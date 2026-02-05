@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://cmadnlfpo5q0h"]
+
+[ext_resource type="Texture2D" uid="uid://gnkr6un47j1l" path="res://Assets/ice.png" id="1_bnqie"]
+[ext_resource type="Script" uid="uid://5ile2axn7eb8" path="res://World/ice_tile.gd" id="1_m6ww0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_m6ww0"]
+size = Vector2(32, 32)
+
+[node name="Area2D" type="Area2D" unique_id=1114530421]
+script = ExtResource("1_m6ww0")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=455533405]
+shape = SubResource("RectangleShape2D_m6ww0")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1366642336]
+texture = ExtResource("1_bnqie")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

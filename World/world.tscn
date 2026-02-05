@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://cx1jioga61fyi"]
+
+[ext_resource type="Script" uid="uid://drrulnnoltp6a" path="res://World/world.gd" id="1_8a836"]
+[ext_resource type="PackedScene" uid="uid://hvpf0nex82ol" path="res://World/Map.tscn" id="2_8a836"]
+
+[node name="World" type="Node2D" unique_id=1136132527]
+script = ExtResource("1_8a836")
+
+[node name="Map" parent="." unique_id=1227534341 instance=ExtResource("2_8a836")]
+
+[node name="Team1" type="Node" parent="." unique_id=2082206343]
+
+[node name="Team2" type="Node" parent="." unique_id=1124684671]
+
+[node name="Projectiles" type="Node" parent="." unique_id=255474915]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1918730371]
+
+[node name="Control" type="Control" parent="." unique_id=1213574379]
+visible = false
+z_index = 10
+layout_mode = 3
+anchors_preset = 0
+offset_left = 66.0
+offset_top = -186.0
+offset_right = 172.0
+offset_bottom = -36.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control" unique_id=2137353938]
+layout_mode = 0
+offset_left = 25.0
+offset_top = 26.0
+offset_right = 141.0
+offset_bottom = 162.0
+
+[node name="Move" type="Button" parent="Control/VBoxContainer" unique_id=1147090095]
+layout_mode = 2
+text = "Move
+"
+
+[node name="Throw" type="Button" parent="Control/VBoxContainer" unique_id=890675175]
+layout_mode = 2
+text = "Throw"
+
+[node name="Kick" type="Button" parent="Control/VBoxContainer" unique_id=125232204]
+layout_mode = 2
+text = "Kick
+"
+
+[node name="End Turn" type="Button" parent="Control/VBoxContainer" unique_id=684883190]
+layout_mode = 2
+text = "End Turn
+"
+
+[node name="Bars" type="Control" parent="." unique_id=1743594739]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[connection signal="pressed" from="Control/VBoxContainer/Move" to="." method="_on_move_pressed"]
+[connection signal="pressed" from="Control/VBoxContainer/Throw" to="." method="_on_throw_pressed"]
+[connection signal="pressed" from="Control/VBoxContainer/Kick" to="." method="_on_kick_pressed"]
+[connection signal="pressed" from="Control/VBoxContainer/End Turn" to="." method="_on_end_turn_pressed"]
