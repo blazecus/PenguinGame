@@ -22,12 +22,12 @@ const WALK_FORCES := {
 }
 
 const DRAG_FORCES := {
-	Tile.TileType.GROUND: 800.0,
-	Tile.TileType.ICE: 50.0,
-	Tile.TileType.WATER: 800.0
+	Tile.TileType.GROUND: 2.0,
+	Tile.TileType.ICE: 0.5,
+	Tile.TileType.WATER: 0.3
 }
 
-const BELLY_DRAG_MULTIPLIER = 0.5
+const BELLY_DRAG_MULTIPLIER = 0.2
 const BELLY_ROTATIONAL_SPEED = 1.7
 const BELLY_FORCE_MULTIPLIER = 0.5
 
@@ -38,15 +38,17 @@ const VELOCITY_DRAG = 0.0001
 const JUMP_VELOCITY = 15.0
 const GRAVITY = 20.0
 
-const THROW_STRENGTH = 10.0
+const THROW_STRENGTH = 5.0
 const HEIGHT_THROW_STRENGTH = 0.1
+const THROW_DRAG_LENGTH = 150
+const THROW_HEIGHT_DRAG_LENGTH = 110
 
 const MOVEMENT_LENGTH = 3.0
 
 const TRAJECTORY_SIM_GRAVITY = 20.0
 const TRAJECTORY_SIM_STEPS = 30
-const TRAJECTORY_SIM_DELTA = 0.016
 const TRAJECTORY_SIM_HEIGHT_SCALE = 100.0
+const TRAJECTORY_TRIANGLE_SIZE = 15.0
 
 const SHADOW_RATIO = 0.4
 const SHADOW_OFFSET = Vector2(16,3)
@@ -62,7 +64,7 @@ var selected = false
 var height = 0.0
 var vertical_velocity = 0.0
 var on_belly = false
-var belly_direction = Vector2.UP
+var belly_direction = Vector2.DOWN
 var tile_state = Tile.TileType.ICE
 
 var no_collision = 0.0
@@ -134,8 +136,10 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 
 	if(!on_belly):
 		rotation = 0
+		set_deferred("lock_rotation", true)
 	else:
 		rotation = belly_direction.angle() - PI * 0.5
+		lock_rotation = false
 
 	var delta = pstate.step
 
@@ -143,6 +147,8 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 	if(height > 0):
 		height = 0.0
 		vertical_velocity = 0.0
+		if state == PawnState.MOVING:
+			set_collision(1)
 	vertical_velocity += GRAVITY * delta
 
 func handle_gui() -> void:
@@ -174,11 +180,13 @@ func handle_input() -> Vector2:
 
 	if Input.is_action_just_pressed("space"):
 		vertical_velocity = -JUMP_VELOCITY
+		set_collision(1)
 
 	if Input.is_action_just_pressed("shift"):
 		on_belly = !on_belly
 		if(on_belly):
-			belly_direction = -linear_velocity.normalized()
+			if(linear_velocity.length() > 10.0):
+				belly_direction = -linear_velocity.normalized()
 
 	if(state == PawnState.WAITING_FOR_MOVEMENT && movement_input.length() > 0):
 		state = PawnState.MOVING
@@ -187,6 +195,7 @@ func handle_input() -> Vector2:
 	return movement_input.normalized()
 
 func handle_throw_input() -> void:
+	projectile_throw_strength = get_throw_strength()
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if not mouse_pressed and throw_line == 0:
 			throw_line += 1
@@ -228,9 +237,12 @@ func _draw() -> void:
 		
 	# draw directions
 	if(throw_line == 1):
+		var max_line = throw_line_mid
+		if (throw_line_mid - throw_line_start).length() > THROW_DRAG_LENGTH:
+			max_line = throw_line_start + (throw_line_mid - throw_line_start).normalized() * THROW_DRAG_LENGTH
 		draw_line(
 			throw_line_start,
-			throw_line_mid,
+			max_line,
 			Color.BLACK,
 			2.0
 		)
@@ -241,39 +253,49 @@ func _draw() -> void:
 			Color.BLACK,
 			2.0
 		)
+		var max_line = throw_line_end
+		if throw_line_end.y - throw_line_mid.y > THROW_HEIGHT_DRAG_LENGTH:
+			var dir = (throw_line_end - throw_line_mid).normalized()
+			var hypot = THROW_HEIGHT_DRAG_LENGTH * 2.0/sin(dir.angle())
+			max_line = throw_line_mid + dir * 0.5 * hypot
 		draw_line(
 			throw_line_mid,
-			throw_line_end,
+			max_line,
 			Color.BLACK,
 			2.0
 		)
 
 	# draw trajectory
 	if(throw_line >= 1):
-		projectile_throw_strength = get_throw_strength()
 		var trajectory = get_trajectory(projectile_throw_strength)
 
-		#if trajectory.size() >= 2:
-		#	draw_polyline(trajectory, Color.BLACK, 2.0)
 		for coord in trajectory:
 			draw_circle(coord, 2, Color.BLACK)
+		if(trajectory.size() == TRAJECTORY_SIM_STEPS):
+			var tri_coords = PackedVector2Array()
+			var orig = trajectory[trajectory.size()-1]
+			var dir = (orig - trajectory[trajectory.size()-2]).normalized()
+			tri_coords.append(orig + Vector2(dir.y, -dir.x) * 0.5 * TRAJECTORY_TRIANGLE_SIZE)
+			tri_coords.append(orig + Vector2(-dir.y, dir.x) * 0.5 * TRAJECTORY_TRIANGLE_SIZE)
+			tri_coords.append(orig + dir * TRAJECTORY_TRIANGLE_SIZE)
+			
+			draw_colored_polygon(tri_coords, Color.BLACK)
 
 func get_trajectory(throw_strength: Vector2) -> PackedVector2Array:
+	var delta = 1.0 / Engine.physics_ticks_per_second
 	var trajectory = PackedVector2Array()	
 
 	var proj_velocity = throw_strength.x / Projectile.MASSES[projectile_type]
 	var height_velocity = throw_strength.y / Projectile.MASSES[projectile_type]
-	print("traj")
-	print(throw_strength.x)
 
 	var local_proj = Vector2.ZERO
 	var proj_height = 0
 
 	var throw_direction = (throw_line_start - throw_line_mid).normalized()
 	for i in range(TRAJECTORY_SIM_STEPS):
-		local_proj += throw_direction * proj_velocity * TRAJECTORY_SIM_DELTA
-		proj_height += height_velocity * TRAJECTORY_SIM_DELTA
-		height_velocity += TRAJECTORY_SIM_GRAVITY * TRAJECTORY_SIM_DELTA
+		local_proj += throw_direction * proj_velocity * delta
+		height_velocity += TRAJECTORY_SIM_GRAVITY * delta
+		proj_height += height_velocity * delta
 		if(proj_height > 0):
 			break
 		
@@ -282,8 +304,8 @@ func get_trajectory(throw_strength: Vector2) -> PackedVector2Array:
 	return trajectory
 
 func get_throw_strength() -> Vector2:
-	var twod = clamp((throw_line_mid - throw_line_start).length(), 0, 300) * THROW_STRENGTH 
-	var height_strength = (throw_line_mid.y - throw_line_end.y) * HEIGHT_THROW_STRENGTH
+	var twod = clamp((throw_line_mid - throw_line_start).length(), 0, Globals.THROW_MAX_PULL_LENGTH) * Globals.THROW_STRENGTH_MODIFIER
+	var height_strength = -clamp((throw_line_end.y - throw_line_mid.y), 0, THROW_HEIGHT_DRAG_LENGTH) * HEIGHT_THROW_STRENGTH
 	if throw_line == 1:
 		height_strength = -2.0
 	elif height_strength > 0:
@@ -291,17 +313,9 @@ func get_throw_strength() -> Vector2:
 	return Vector2(twod, height_strength)
 
 func compute_forces(movement_input: Vector2, delta: float) -> void:
-	# apply drag
-	var drag_force = Vector2.ZERO 
-	if(moving):
-		var drag_mag = linear_velocity.length() * linear_velocity.length() * VELOCITY_DRAG
-		drag_force = clamp(drag_mag, 0.05, 0.5) * -linear_velocity.normalized() * (BELLY_DRAG_MULTIPLIER if on_belly else 1.0)
-	elif(movement_input.length() == 0.0):
-		force_stop()
-
 	var movement_force = Vector2.ZERO
 	if(!on_belly or height > 0):
-		movement_force = movement_input * (AIRBORN_FORCE if height > 0 else WALK_FORCES[tile_state])
+		movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
 	else:
 		if movement_input.y < 0:
 			movement_input.y *= 1.5
@@ -312,7 +326,8 @@ func compute_forces(movement_input: Vector2, delta: float) -> void:
 		
 		movement_force = movement_input.y * belly_direction * WALK_FORCES[tile_state] * BELLY_FORCE_MULTIPLIER
 
-	apply_central_force(movement_force + drag_force * (AIRBORN_DRAG if height > 0 else DRAG_FORCES[tile_state]))
+	linear_damp = (AIRBORN_DRAG if height < 0 else DRAG_FORCES[tile_state]) * (BELLY_DRAG_MULTIPLIER if on_belly else 1.0)
+	apply_central_force(movement_force)
 
 func check_moving() -> bool:
 	if(linear_velocity.length() < 2.0):
@@ -362,3 +377,10 @@ func get_tile_state() -> Tile.TileType:
 	if(ice_tile_count > 0):
 		return Tile.TileType.ICE
 	return Tile.TileType.WATER
+
+func apply_external_impulse(force: Vector2) -> void:
+	# this function exists so external forces know what forces can apply to
+	apply_central_impulse(force)
+
+func take_damage(amount: float) -> void:
+	health -= amount

@@ -3,6 +3,9 @@
 [ext_resource type="Script" uid="uid://dpaxmyi6djiif" path="res://Character/projectile.gd" id="1_tla7d"]
 [ext_resource type="Texture2D" uid="uid://yitlc5wytinh" path="res://Assets/bomb-Sheet.png" id="2_uu30j"]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_uu30j"]
+radius = 180.0
+
 [sub_resource type="CircleShape2D" id="CircleShape2D_8ugre"]
 radius = 11.18034
 
@@ -172,6 +175,11 @@ animations = [{
 gravity_scale = 0.0
 inertia = 1.0
 script = ExtResource("1_tla7d")
+
+[node name="Explosion" type="Area2D" parent="." unique_id=1273115349]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Explosion" unique_id=1664221417]
+shape = SubResource("CircleShape2D_uu30j")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1642704718]
 shape = SubResource("CircleShape2D_8ugre")
