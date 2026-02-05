@@ -111,3 +111,6 @@ func _on_end_turn_pressed() -> void:
 func set_watching_projectile(projectile: Projectile) -> void:
 	watching_projectile = projectile
 	projectiles.add_child(projectile)
+
+func end_projectile() -> void:
+	selected_pawn.state = PawnScript.PawnState.WAITING_FOR_ACTION

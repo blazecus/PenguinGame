@@ -78,7 +78,7 @@ var throw_line = 0
 var throw_line_start = Vector2.ZERO
 var throw_line_mid = Vector2.ZERO
 var throw_line_end = Vector2.ZERO
-var projectile_type = Projectile.ProjectileType.SNOWBALL
+var projectile_type = Projectile.ProjectileType.BOMB
 
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
@@ -135,12 +135,12 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 		rotation = belly_direction.angle() - PI * 0.5
 
 	var delta = pstate.step
-	if(abs(vertical_velocity) > 0):
-		height += vertical_velocity * delta
-		if(height > 0):
-			height = 0.0
-			vertical_velocity = 0.0
-		vertical_velocity += GRAVITY * delta
+
+	height += vertical_velocity * delta
+	if(height > 0):
+		height = 0.0
+		vertical_velocity = 0.0
+	vertical_velocity += GRAVITY * delta
 
 func handle_gui() -> void:
 	if(selected):
@@ -214,7 +214,7 @@ func throw() -> void:
 	projectile.set_type(projectile_type)
 	projectile.throw(projectile_throw_strength.x, (throw_line_start - throw_line_mid), projectile_throw_strength.y)
 	get_parent().get_parent().set_watching_projectile(projectile)
-	
+	state = PawnState.WATCHING
 
 func _draw() -> void:
 	if throw_line >= 3 or throw_line < 1:
