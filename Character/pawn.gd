@@ -48,6 +48,9 @@ const TRAJECTORY_SIM_STEPS = 30
 const TRAJECTORY_SIM_DELTA = 0.016
 const TRAJECTORY_SIM_HEIGHT_SCALE = 100.0
 
+const SHADOW_RATIO = 0.4
+const SHADOW_OFFSET = Vector2(16,3)
+
 const NO_COLLISION_LENGTH = 1.0
 
 var moving = false
@@ -119,8 +122,8 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	
 func handle_sprites() -> void:
-	$Shadow.global_rotation = 0.0
 	sprite.global_position = global_position + Vector2(0, height * 10.0)
+	shadow.global_position = global_position + Vector2(-height * 10.0 * SHADOW_RATIO, 0) + SHADOW_OFFSET
 
 func set_collision(toggle: int):
 	collision_layer = toggle
@@ -198,6 +201,9 @@ func handle_throw_input() -> void:
 		mouse_pressed = true
 	else:
 		mouse_pressed = false
+	
+	if throw_line > 0:
+		gui.get_node("VBoxContainer").get_node("Throw").disabled = true
 
 	if(throw_line == 1):
 		throw_line_mid = get_local_mouse_position()
@@ -324,7 +330,9 @@ func select() -> void:
 	selected = true
 	gui.visible = true
 	gui.get_node("VBoxContainer").get_node("Move").disabled = false
+	gui.get_node("VBoxContainer").get_node("Throw").disabled = false
 	state = PawnState.WAITING_FOR_ACTION
+	throw_line = 0
 
 func unselect() -> void:
 	selected = false

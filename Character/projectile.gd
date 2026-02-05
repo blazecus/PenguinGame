@@ -18,13 +18,25 @@ const MASSES := {
 	ProjectileType.BUMPER : 15.0
 }
 
+const ANIMATIONS := {
+	ProjectileType.SNOWBALL : "snowball",
+	ProjectileType.BOMB : "bomb",
+	ProjectileType.SPIKES : "spikes",
+	ProjectileType.BLOCK : "block",
+	ProjectileType.BUMPER : "bumper"
+}
+
 @onready var sprite = $AnimatedSprite2D
+@onready var shadow = $Shadow
 
 const THROW_MODIFIER = 0.003
 const HEIGHT_STRENGTH_MODIFIER = 10.0
-const HEIGHT_MODIFIER = 5.0
+const HEIGHT_MODIFIER = 2.0
 const BOMB_TIME_LENGTH = 4.0
-const TORQUE_MODIFIER = 0.3
+const TORQUE_MODIFIER = 0.04
+
+const SHADOW_RATIO = 0.4
+const SHADOW_OFFSET = Vector2(8.0, -2.0)
 
 var height = 0.0
 var vertical_velocity = 0.0
@@ -42,12 +54,17 @@ func set_type(new_type: ProjectileType) -> void:
 
 func throw(power: float, direction: Vector2, vertical_power: float):
 	apply_central_impulse(direction * power * THROW_MODIFIER)
+	print(power * TORQUE_MODIFIER)
 	apply_torque_impulse(power * TORQUE_MODIFIER)
 	vertical_velocity = vertical_power * HEIGHT_STRENGTH_MODIFIER / mass
+
+	print(lock_rotation)
+	print(inertia)
 	set_collision(2)
 
 func _physics_process(delta: float) -> void:
 	sprite.global_position = global_position + Vector2(0, height * HEIGHT_MODIFIER)	
+	shadow.global_position = global_position + Vector2(-height * HEIGHT_MODIFIER * SHADOW_RATIO, 0) + SHADOW_OFFSET
 
 	height += vertical_velocity * delta
 	if(height >= 0):
@@ -64,7 +81,7 @@ func _physics_process(delta: float) -> void:
 
 		if bomb_timer <= 0.0:
 			end()
-
+	
 func set_collision(toggle: int) -> void:
 	collision_layer = toggle
 	collision_mask = toggle

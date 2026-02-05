@@ -1,0 +1,39 @@
+[gd_resource type="SpriteFrames" format=3 uid="uid://rstc7m58bfrv"]
+
+[ext_resource type="Texture2D" uid="uid://v87k1futfhq5" path="res://Assets/penguin_forwards_walk-Sheet.png" id="1_qny7e"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wdi18"]
+atlas = ExtResource("1_qny7e")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_q7865"]
+atlas = ExtResource("1_qny7e")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a2njl"]
+atlas = ExtResource("1_qny7e")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ghhkc"]
+atlas = ExtResource("1_qny7e")
+region = Rect2(96, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdi18")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_q7865")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a2njl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ghhkc")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]

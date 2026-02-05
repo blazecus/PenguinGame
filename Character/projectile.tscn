@@ -170,10 +170,18 @@ animations = [{
 
 [node name="Projectile" type="RigidBody2D" unique_id=918950030]
 gravity_scale = 0.0
+inertia = 1.0
 script = ExtResource("1_tla7d")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1642704718]
 shape = SubResource("CircleShape2D_8ugre")
+
+[node name="Shadow" type="AnimatedSprite2D" parent="." unique_id=1925996130]
+modulate = Color(0.08598385, 0.085983746, 0.08598376, 0.654902)
+position = Vector2(8, -2)
+rotation = 0.61086524
+sprite_frames = SubResource("SpriteFrames_x7wbm")
+animation = &"bomb"
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1283292583]
 texture_filter = 1
