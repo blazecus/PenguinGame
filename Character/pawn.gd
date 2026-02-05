@@ -93,7 +93,7 @@ func set_gui(gui_control: Node, bar_control: Node):
 	bar = bar_control
 	gui = gui_control
 
-func _process(delta: float) -> void:	
+func _physics_process(delta: float) -> void:	
 	tile_state = get_tile_state()
 	moving = check_moving()
 	
@@ -120,7 +120,7 @@ func _process(delta: float) -> void:
 	handle_gui()
 	handle_sprites()
 	queue_redraw()
-	
+
 func handle_sprites() -> void:
 	sprite.global_position = global_position + Vector2(0, height * 10.0)
 	shadow.global_position = global_position + Vector2(-height * 10.0 * SHADOW_RATIO, 0) + SHADOW_OFFSET
@@ -263,6 +263,8 @@ func get_trajectory(throw_strength: Vector2) -> PackedVector2Array:
 
 	var proj_velocity = throw_strength.x / Projectile.MASSES[projectile_type]
 	var height_velocity = throw_strength.y / Projectile.MASSES[projectile_type]
+	print("traj")
+	print(throw_strength.x)
 
 	var local_proj = Vector2.ZERO
 	var proj_height = 0

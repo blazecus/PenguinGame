@@ -29,9 +29,9 @@ const ANIMATIONS := {
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
 
-const THROW_MODIFIER = 0.003
-const HEIGHT_STRENGTH_MODIFIER = 10.0
-const HEIGHT_MODIFIER = 2.0
+# magic number that makes the physics match up for some god forsaken reason
+const THROW_MODIFIER = 0.0092
+const HEIGHT_MODIFIER = 100.0
 const BOMB_TIME_LENGTH = 4.0
 const TORQUE_MODIFIER = 0.04
 
@@ -54,12 +54,10 @@ func set_type(new_type: ProjectileType) -> void:
 
 func throw(power: float, direction: Vector2, vertical_power: float):
 	apply_central_impulse(direction * power * THROW_MODIFIER)
-	print(power * TORQUE_MODIFIER)
+	#linear_velocity = (power / mass) * direction
 	apply_torque_impulse(power * TORQUE_MODIFIER)
-	vertical_velocity = vertical_power * HEIGHT_STRENGTH_MODIFIER / mass
+	vertical_velocity = vertical_power / mass
 
-	print(lock_rotation)
-	print(inertia)
 	set_collision(2)
 
 func _physics_process(delta: float) -> void:

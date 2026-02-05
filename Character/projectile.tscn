@@ -177,7 +177,7 @@ script = ExtResource("1_tla7d")
 shape = SubResource("CircleShape2D_8ugre")
 
 [node name="Shadow" type="AnimatedSprite2D" parent="." unique_id=1925996130]
-modulate = Color(0.08598385, 0.085983746, 0.08598376, 0.654902)
+modulate = Color(0, 0, 0, 0.654902)
 position = Vector2(8, -2)
 rotation = 0.61086524
 sprite_frames = SubResource("SpriteFrames_x7wbm")

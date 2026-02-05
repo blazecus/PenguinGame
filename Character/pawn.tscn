@@ -9,10 +9,11 @@ height = 61.0
 
 [node name="Pawn" type="RigidBody2D" unique_id=940266179]
 gravity_scale = 0.0
+inertia = 1.0
 script = ExtResource("1_doigq")
 
 [node name="Shadow" type="AnimatedSprite2D" parent="." unique_id=1084302444]
-modulate = Color(0.23921569, 0.23921569, 0.23921569, 0.54509807)
+modulate = Color(0, 0, 0, 0.54509807)
 position = Vector2(16, 3.0000005)
 rotation = 0.61086524
 scale = Vector2(2, 2)
@@ -22,7 +23,7 @@ sprite_frames = ExtResource("2_pesg8")
 texture_filter = 1
 scale = Vector2(2, 2)
 sprite_frames = ExtResource("2_pesg8")
-frame_progress = 0.6734724
+frame_progress = 0.57663065
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=758285216]
 position = Vector2(0, 0.5)
