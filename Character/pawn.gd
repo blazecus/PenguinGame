@@ -16,14 +16,14 @@ const Tile = preload("res://World/tile.gd")
 const Projectile = preload("res://Character/projectile.gd")
 
 const WALK_FORCES := {
-	Tile.TileType.GROUND: 900.0,
-	Tile.TileType.ICE: 100.0,
+	Tile.TileType.GROUND: 1000.0,
+	Tile.TileType.ICE: 200.0,
 	Tile.TileType.WATER: 900.0
 }
 
 const DRAG_FORCES := {
-	Tile.TileType.GROUND: 2.0,
-	Tile.TileType.ICE: 0.5,
+	Tile.TileType.GROUND: 6.0,
+	Tile.TileType.ICE: 0.7,
 	Tile.TileType.WATER: 0.3
 }
 
@@ -31,8 +31,8 @@ const BELLY_DRAG_MULTIPLIER = 0.2
 const BELLY_ROTATIONAL_SPEED = 1.7
 const BELLY_FORCE_MULTIPLIER = 0.5
 
-const AIRBORN_DRAG = 100.0
-const AIRBORN_FORCE = 150.0
+const AIRBORN_DRAG = 0.4
+const AIRBORN_FORCE = 75.0
 
 const VELOCITY_DRAG = 0.0001
 const JUMP_VELOCITY = 15.0
@@ -55,6 +55,10 @@ const SHADOW_OFFSET = Vector2(16,3)
 
 const NO_COLLISION_LENGTH = 1.0
 
+const STOP_SPEED = 20.0
+
+const PENGUIN_MASS = 10.0
+
 var moving = false
 var state: PawnState = PawnState.IDLE
 
@@ -74,9 +78,12 @@ var movement_timer = MOVEMENT_LENGTH
 var bar: Node
 var gui: Node
 
-var ice_tile_count = 0
-var ground_tile_count = 0
-var water_tile_count = 0
+var tile_counts := {
+	Tile.TileType.ICE: 0,
+	Tile.TileType.GROUND: 0,
+	Tile.TileType.WATER: 0,
+	Tile.TileType.SPIKES: 0
+}
 
 var mouse_pressed = false
 var throw_line = 0
@@ -89,7 +96,8 @@ var projectile_type = Projectile.ProjectileType.BOMB
 @onready var shadow = $Shadow
 
 func _ready() -> void:
-	sprite.play()	
+	sprite.play()
+	mass = PENGUIN_MASS
 
 func set_gui(gui_control: Node, bar_control: Node):
 	bar = bar_control
@@ -99,14 +107,12 @@ func _physics_process(delta: float) -> void:
 	tile_state = get_tile_state()
 	moving = check_moving()
 	
-	var movement_input = Vector2.ZERO 
-	if(selected and (state == PawnState.WAITING_FOR_MOVEMENT or state == PawnState.MOVING)):
-		movement_input = handle_input()
+	var movement_input = handle_input()
 	compute_forces(movement_input, delta)
 
 	if(state == PawnState.MOVING):
 		movement_timer -= delta
-		if(movement_timer <= 0.0):
+		if(movement_timer <= 0.0 and slow_stopped()):
 			state = PawnState.DONE_MOVING
 			gui.visible = true
 			gui.get_node("VBoxContainer").get_node("Move").disabled = true
@@ -139,7 +145,7 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 		set_deferred("lock_rotation", true)
 	else:
 		rotation = belly_direction.angle() - PI * 0.5
-		lock_rotation = false
+		set_deferred("lock_rotation", false)
 
 	var delta = pstate.step
 
@@ -150,6 +156,9 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 		if state == PawnState.MOVING:
 			set_collision(1)
 	vertical_velocity += GRAVITY * delta
+
+	for i in range(pstate.get_contact_count()):
+		var collider = pstate.get_contact_collider_object(i)
 
 func handle_gui() -> void:
 	if(selected):
@@ -169,30 +178,34 @@ func handle_gui() -> void:
 
 func handle_input() -> Vector2:
 	var movement_input = Vector2.ZERO
-	if Input.is_action_pressed("left"):
-		movement_input += Vector2.LEFT
-	if Input.is_action_pressed("right"):
-		movement_input += Vector2.RIGHT
-	if Input.is_action_pressed("up"):
-		movement_input += Vector2.UP
-	if Input.is_action_pressed("down"):
-		movement_input += Vector2.DOWN
+	if(selected and (state == PawnState.WAITING_FOR_MOVEMENT or state == PawnState.MOVING) and movement_timer > 0.0):
+		if Input.is_action_pressed("left"):
+			movement_input += Vector2.LEFT
+		if Input.is_action_pressed("right"):
+			movement_input += Vector2.RIGHT
+		if Input.is_action_pressed("up"):
+			movement_input += Vector2.UP
+		if Input.is_action_pressed("down"):
+			movement_input += Vector2.DOWN
 
-	if Input.is_action_just_pressed("space"):
-		vertical_velocity = -JUMP_VELOCITY
-		set_collision(1)
+		if Input.is_action_just_pressed("shift"):
+			toggle_belly()
 
-	if Input.is_action_just_pressed("shift"):
-		on_belly = !on_belly
-		if(on_belly):
-			if(linear_velocity.length() > 10.0):
-				belly_direction = -linear_velocity.normalized()
+	if selected:
+		if Input.is_action_just_pressed("space"):
+			vertical_velocity = -JUMP_VELOCITY
+			set_collision(2)
 
 	if(state == PawnState.WAITING_FOR_MOVEMENT && movement_input.length() > 0):
 		state = PawnState.MOVING
-		movement_timer = MOVEMENT_LENGTH 
 
 	return movement_input.normalized()
+
+func toggle_belly() -> void:
+	on_belly = !on_belly
+	if(on_belly):
+		if(linear_velocity.length() > 10.0):
+			belly_direction = -linear_velocity.normalized()
 
 func handle_throw_input() -> void:
 	projectile_throw_strength = get_throw_strength()
@@ -349,6 +362,7 @@ func select() -> void:
 	gui.get_node("VBoxContainer").get_node("Move").disabled = false
 	gui.get_node("VBoxContainer").get_node("Throw").disabled = false
 	state = PawnState.WAITING_FOR_ACTION
+	movement_timer = MOVEMENT_LENGTH 
 	throw_line = 0
 
 func unselect() -> void:
@@ -363,24 +377,30 @@ func _on_move_pressed() -> void:
 	else:
 		print("wrong state on move press")
 
-func add_tiles(type: Tile.TileType, num: int):
-	if(type == Tile.TileType.ICE):
-		ice_tile_count += num
-	elif(type == Tile.TileType.GROUND):
-		ground_tile_count += num
-	else:
-		water_tile_count += num
-
-func get_tile_state() -> Tile.TileType:
-	if(ground_tile_count > 0):
-		return Tile.TileType.GROUND
-	if(ice_tile_count > 0):
-		return Tile.TileType.ICE
-	return Tile.TileType.WATER
-
 func apply_external_impulse(force: Vector2) -> void:
 	# this function exists so external forces know what forces can apply to
 	apply_central_impulse(force)
 
 func take_damage(amount: float) -> void:
 	health -= amount
+
+func add_tiles(tile_type: Tile.TileType, num: int):
+	tile_counts[tile_type] += num
+
+func get_tile_state() -> Tile.TileType:
+	if(tile_counts[Tile.TileType.GROUND] > 0):
+		return Tile.TileType.GROUND
+	if(tile_counts[Tile.TileType.ICE] > 0):
+		return Tile.TileType.ICE
+	return Tile.TileType.WATER
+
+func collide_with_wall(normal: Vector2, bounce_factor: float, flat_force: float) -> void:
+	global_position = global_position + normal * 32.0
+	linear_velocity = normal * (linear_velocity.length() * bounce_factor + flat_force)
+
+func slow_stopped() -> bool:
+	if linear_velocity.length() < STOP_SPEED:
+		linear_velocity = Vector2.ZERO
+		on_belly = false
+		return true
+	return false

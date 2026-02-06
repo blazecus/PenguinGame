@@ -1,9 +1,116 @@
 [gd_scene format=3 uid="uid://dncsaeafa1kse"]
 
 [ext_resource type="Script" uid="uid://c8fx6qldjvfdy" path="res://World/tile.gd" id="1_rx3n0"]
-[ext_resource type="Texture2D" uid="uid://gnkr6un47j1l" path="res://Assets/ice.png" id="2_5c4ib"]
+[ext_resource type="Texture2D" uid="uid://ja7mnwkhqfn" path="res://Assets/ground2.png" id="2_5dwmc"]
+[ext_resource type="Texture2D" uid="uid://2cexw3dlis1" path="res://Assets/bumper.png" id="2_wsdpr"]
+[ext_resource type="Texture2D" uid="uid://cb4ospbhrg43l" path="res://Assets/ice2.png" id="3_6dn7w"]
+[ext_resource type="Texture2D" uid="uid://6uwmwnqwgcms" path="res://Assets/wall2.png" id="4_5dwmc"]
+[ext_resource type="Texture2D" uid="uid://dmr1jm0ts8kqc" path="res://Assets/ice3.png" id="4_qw6gq"]
+[ext_resource type="Texture2D" uid="uid://dmmwavwewhqpu" path="res://Assets/water2.png" id="5_rqql2"]
+[ext_resource type="Texture2D" uid="uid://dl2baks8jssor" path="res://Assets/ice4.png" id="5_wsdpr"]
+[ext_resource type="Texture2D" uid="uid://sri3aimcoxfo" path="res://Assets/ice5.png" id="6_vj0kn"]
+[ext_resource type="Texture2D" uid="uid://nscv4w3578nt" path="res://Assets/ice6.png" id="7_kfadh"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rx3n0"]
+size = Vector2(32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vj0kn"]
+atlas = ExtResource("2_wsdpr")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n2nww"]
+atlas = ExtResource("2_5dwmc")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qw6gq"]
+atlas = ExtResource("3_6dn7w")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5mnbd"]
+atlas = ExtResource("4_qw6gq")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nhjps"]
+atlas = ExtResource("5_wsdpr")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_korwo"]
+atlas = ExtResource("6_vj0kn")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4ru17"]
+atlas = ExtResource("7_kfadh")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6dn7w"]
+atlas = ExtResource("4_5dwmc")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wsdpr"]
+atlas = ExtResource("5_rqql2")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_kfadh"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vj0kn")
+}],
+"loop": true,
+"name": &"bumper",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_n2nww")
+}],
+"loop": true,
+"name": &"ground",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qw6gq")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5mnbd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nhjps")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_korwo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4ru17")
+}],
+"loop": true,
+"name": &"ice",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"spikes",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_6dn7w")
+}],
+"loop": true,
+"name": &"wall",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wsdpr")
+}],
+"loop": true,
+"name": &"water",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5dwmc"]
 size = Vector2(32, 32)
 
 [node name="Tile" type="Node2D" unique_id=1662968361]
@@ -14,8 +121,16 @@ script = ExtResource("1_rx3n0")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=59301459]
 shape = SubResource("RectangleShape2D_rx3n0")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1373280807]
-texture = ExtResource("2_5c4ib")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=95708458]
+texture_filter = 1
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_kfadh")
+animation = &"bumper"
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1821137449]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1504349889]
+shape = SubResource("RectangleShape2D_5dwmc")
 
 [connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]
 [connection signal="body_exited" from="Area2D" to="." method="_on_area_2d_body_exited"]

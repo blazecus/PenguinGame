@@ -14,12 +14,12 @@ func _ready() -> void:
 	print("map set up")
 	
 func load_tiles(map: Dictionary) -> void:
-	var current_tile_type = 1
 	var tiles = map["map"]
-	for coords in tiles.values():
+	for key in tiles:
+		var coords = tiles[key]
+		var type = int(key)
 		for coord in coords:
-			set_tile(coord[0], coord[1], current_tile_type)
-		current_tile_type += 1
+			set_tile(coord[0], coord[1], type)
 	
 func create_tile(x: int, y: int, type: Tile.TileType) -> Tile:
 	var tile = TILE_SCENE.instantiate()
