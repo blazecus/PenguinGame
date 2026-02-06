@@ -16,16 +16,20 @@ const Tile = preload("res://World/tile.gd")
 const Projectile = preload("res://Character/projectile.gd")
 
 const WALK_FORCES := {
-	Tile.TileType.GROUND: 1000.0,
-	Tile.TileType.ICE: 200.0,
-	Tile.TileType.WATER: 900.0
+	Tile.TileType.ICE: 2000.0,
+	Tile.TileType.GROUND: 10000.0,
+	Tile.TileType.WATER: 900.0,
+	Tile.TileType.SPIKES: 1000.0
 }
 
 const DRAG_FORCES := {
+	Tile.TileType.ICE: 0.1,
 	Tile.TileType.GROUND: 6.0,
-	Tile.TileType.ICE: 0.7,
-	Tile.TileType.WATER: 0.3
+	Tile.TileType.WATER: 0.3,
+	Tile.TileType.SPIKES: 2.0
 }
+
+const TEAM_COLORS = [Color.BLUE, Color.RED]
 
 const BELLY_DRAG_MULTIPLIER = 0.2
 const BELLY_ROTATIONAL_SPEED = 1.7
@@ -92,18 +96,34 @@ var throw_line_mid = Vector2.ZERO
 var throw_line_end = Vector2.ZERO
 var projectile_type = Projectile.ProjectileType.BOMB
 
+var prev_vel = Vector2.ZERO
+
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
 
 func _ready() -> void:
-	sprite.play()
+	play_animation("default",0)
 	mass = PENGUIN_MASS
+	contact_monitor = true
+	max_contacts_reported = 8
+
 
 func set_gui(gui_control: Node, bar_control: Node):
 	bar = bar_control
 	gui = gui_control
 
+func set_team(new_team: int) -> void:
+	team = new_team
+	set_highlight_color(TEAM_COLORS[team])
+
 func _physics_process(delta: float) -> void:	
+	if health <= 0:
+		if sprite.animation == "death" and sprite.frame == 11:
+			visible = false
+			bar.visible = false
+			if selected:
+				get_parent().get_parent().end_turn() # code is a mess but I must finish in time
+		return
 	tile_state = get_tile_state()
 	moving = check_moving()
 	
@@ -116,8 +136,10 @@ func _physics_process(delta: float) -> void:
 			state = PawnState.DONE_MOVING
 			gui.visible = true
 			gui.get_node("VBoxContainer").get_node("Move").disabled = true
-	elif(state == PawnState.THROWING):
-		handle_throw_input()
+	else:
+		slow_stopped()
+		if(state == PawnState.THROWING):
+			handle_throw_input()
 	
 	if(no_collision > 0.0):
 		no_collision -= delta
@@ -128,6 +150,7 @@ func _physics_process(delta: float) -> void:
 	handle_gui()
 	handle_sprites()
 	queue_redraw()
+
 
 func handle_sprites() -> void:
 	sprite.global_position = global_position + Vector2(0, height * 10.0)
@@ -159,6 +182,24 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 
 	for i in range(pstate.get_contact_count()):
 		var collider = pstate.get_contact_collider_object(i)
+		if collider.get_parent().has_method("get_collision_info"):
+			var normal = rect_normal(pstate.get_contact_local_normal(i))
+			var collision_info = collider.get_parent().get_collision_info()
+			var collision_direction = prev_vel.normalized()
+			if abs(normal.x) > 0:
+				collision_direction.x = -collision_direction.x
+			else:
+				collision_direction.y = -collision_direction.y
+			
+			collide_with_wall(collision_direction, collision_info.x, collision_info.y)
+	
+	prev_vel = linear_velocity	
+
+func rect_normal(n: Vector2) -> Vector2:
+	if abs(n.x) > abs(n.y):
+		return Vector2(sign(n.x), 0)
+	else:
+		return Vector2(0, sign(n.y))
 
 func handle_gui() -> void:
 	if(selected):
@@ -390,13 +431,17 @@ func add_tiles(tile_type: Tile.TileType, num: int):
 func get_tile_state() -> Tile.TileType:
 	if(tile_counts[Tile.TileType.GROUND] > 0):
 		return Tile.TileType.GROUND
-	if(tile_counts[Tile.TileType.ICE] > 0):
+	elif(tile_counts[Tile.TileType.ICE] > 0):
 		return Tile.TileType.ICE
+	elif(tile_counts[Tile.TileType.SPIKES] > 0):
+		return Tile.TileType.ICE
+	elif tile_counts[Tile.TileType.WATER] > 0: die(true)
 	return Tile.TileType.WATER
 
 func collide_with_wall(normal: Vector2, bounce_factor: float, flat_force: float) -> void:
-	global_position = global_position + normal * 32.0
-	linear_velocity = normal * (linear_velocity.length() * bounce_factor + flat_force)
+	linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
+	global_position += linear_velocity.normalized()
+	on_belly = false
 
 func slow_stopped() -> bool:
 	if linear_velocity.length() < STOP_SPEED:
@@ -404,3 +449,25 @@ func slow_stopped() -> bool:
 		on_belly = false
 		return true
 	return false
+
+func play_animation(animation: String, frame: int) -> void:
+	$AnimatedSprite2D.play(animation)
+	$AnimatedSprite2D/Highlight.play(animation)
+	$Shadow.play(animation)
+
+	$AnimatedSprite2D.frame = frame
+	$AnimatedSprite2D/Highlight.frame = frame
+	$Shadow.frame = frame
+
+func set_highlight_color(hl_color: Color) -> void:
+	$AnimatedSprite2D/Highlight.set_instance_shader_parameter("highlight_color", hl_color)
+
+func die(drown: bool) -> void:
+	if drown:
+		health = 0
+
+	freeze = true
+	collision_mask = 0
+	collision_layer = 0
+
+	play_animation("death", 0)

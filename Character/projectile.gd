@@ -31,7 +31,8 @@ const ANIMATIONS := {
 const DRAG_FORCES := {
 	Tile.TileType.GROUND: 2.0,
 	Tile.TileType.ICE: 0.5,
-	Tile.TileType.WATER: 0.3
+	Tile.TileType.WATER: 0.3,
+	Tile.TileType.SPIKES: 2.0,
 }
 
 const AIRBORN_DRAG = 0.0
@@ -43,12 +44,12 @@ const AIRBORN_DRAG = 0.0
 # magic number that makes the physics match up for some god forsaken reason
 const THROW_MODIFIER = 0.0045
 const HEIGHT_MODIFIER = 100.0
-const BOMB_TIME_LENGTH = 4.0
+const BOMB_TIME_LENGTH = 3.33
 const TORQUE_MODIFIER = 0.04
 const BOUNCE_TORQUE_MODIFIER = 0.06
 
 const EXPLOSION_RADIUS = 180.0
-const EXPLOSION_FORCE_MODIFIER = 10.0
+const EXPLOSION_FORCE_MODIFIER = 100.0
 const EXPLOSION_DAMAGE_MODIFIER = 50.0 / EXPLOSION_RADIUS
 const TILE_EXPLOSION_RADIUS = 50.0
 
@@ -86,8 +87,8 @@ func set_type(new_type: ProjectileType) -> void:
 	type = new_type
 	mass = MASSES[type]
 
-	$AnimatedSprite2D.play()
-	$Shadow.play()
+	$AnimatedSprite2D.play(ANIMATIONS[type])
+	$Shadow.play(ANIMATIONS[type])
 
 func throw(power: float, direction: Vector2, vertical_power: float):
 	# more goofy shit to make trajectory scaling work for no reason
@@ -102,6 +103,10 @@ func throw(power: float, direction: Vector2, vertical_power: float):
 func _physics_process(delta: float) -> void:
 	tile_state = get_tile_state()
 
+	if tile_state == Tile.TileType.WATER:
+		end()
+		return
+
 	sprite.global_position = global_position + Vector2(0, height * HEIGHT_MODIFIER)	
 	shadow.global_position = global_position + Vector2(-height * HEIGHT_MODIFIER * SHADOW_RATIO, 0) + SHADOW_OFFSET
 
@@ -115,7 +120,7 @@ func _physics_process(delta: float) -> void:
 	if type == ProjectileType.BOMB:
 		bomb_timer -= delta
 
-		if bomb_timer <= 1.0 and not exploded:
+		if bomb_timer <= 0.33 and not exploded:
 			explode()
 
 		if bomb_timer <= 0.0:
@@ -134,12 +139,14 @@ func explode() -> void:
 			if not check_for_wall(body.global_position):
 				var dir = (body.global_position - global_position)
 				var distance = clamp(EXPLOSION_RADIUS - dir.length(), 10, EXPLOSION_RADIUS)
-				body.apply_external_impulse(dir.normalized() *  distance * EXPLOSION_FORCE_MODIFIER)
+				#body.apply_external_impulse(dir.normalized() *  distance * EXPLOSION_FORCE_MODIFIER)
+				body.linear_velocity = dir.normalized() * distance * EXPLOSION_FORCE_MODIFIER / body.mass
 
 				if body.has_method("take_damage"):
 					body.take_damage(distance * EXPLOSION_DAMAGE_MODIFIER)
 	exploded = true
 	freeze = true
+	$AnimatedSprite2D.play("explosion")
 
 func terrain_explode() -> void:
 	for area in explosion.get_overlapping_areas():
@@ -158,8 +165,8 @@ func check_for_wall(body_position: Vector2) -> bool:
 	return false
 
 func end() -> void:
-	get_parent().get_parent().end_projectile()
-	queue_free()
+	get_parent().get_parent().end_projectile(self)
+	call_deferred("queue_free")
 
 func add_tiles(tile_type: Tile.TileType, num: int):
 	tile_counts[tile_type] += num
@@ -167,9 +174,11 @@ func add_tiles(tile_type: Tile.TileType, num: int):
 func get_tile_state() -> Tile.TileType:
 	if(tile_counts[Tile.TileType.GROUND] > 0):
 		return Tile.TileType.GROUND
-	if(tile_counts[Tile.TileType.ICE] > 0):
+	elif(tile_counts[Tile.TileType.ICE] > 0):
 		return Tile.TileType.ICE
-	return Tile.TileType.WATER
+	elif(tile_counts[Tile.TileType.WATER] > 0):
+		return Tile.TileType.WATER
+	return Tile.TileType.ICE
 
 func collide_with_wall(normal: Vector2, bounce_factor: float, flat_force: float) -> void:
 	apply_torque_impulse((bounce_factor * prev_vel.length() + flat_force) * BOUNCE_TORQUE_MODIFIER)

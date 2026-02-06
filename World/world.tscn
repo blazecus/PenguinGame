@@ -35,20 +35,18 @@ offset_bottom = 162.0
 
 [node name="Move" type="Button" parent="Control/VBoxContainer" unique_id=1147090095]
 layout_mode = 2
+focus_mode = 0
 text = "Move
 "
 
 [node name="Throw" type="Button" parent="Control/VBoxContainer" unique_id=890675175]
 layout_mode = 2
+focus_mode = 0
 text = "Throw"
-
-[node name="Kick" type="Button" parent="Control/VBoxContainer" unique_id=125232204]
-layout_mode = 2
-text = "Kick
-"
 
 [node name="End Turn" type="Button" parent="Control/VBoxContainer" unique_id=684883190]
 layout_mode = 2
+focus_mode = 0
 text = "End Turn
 "
 
@@ -60,5 +58,4 @@ offset_bottom = 40.0
 
 [connection signal="pressed" from="Control/VBoxContainer/Move" to="." method="_on_move_pressed"]
 [connection signal="pressed" from="Control/VBoxContainer/Throw" to="." method="_on_throw_pressed"]
-[connection signal="pressed" from="Control/VBoxContainer/Kick" to="." method="_on_kick_pressed"]
 [connection signal="pressed" from="Control/VBoxContainer/End Turn" to="." method="_on_end_turn_pressed"]

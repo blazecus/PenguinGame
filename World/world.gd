@@ -1,6 +1,7 @@
 extends Node2D
 
 const CAMERA_SPEED = 10.0
+const TEXT_TIME = 4.0
 
 const PAWN_SCENE = preload("res://Character/pawn.tscn")
 const BAR_SCENE = preload("res://Character/Bars.tscn")
@@ -25,6 +26,9 @@ var camera_goal_position = Vector2.ZERO
 var selected_pawn: Node2D
 var watching_projectile: Node2D
 
+var start_timer = TEXT_TIME
+var end_timer = 0
+
 func _ready() -> void:
 	load_map("")
 	select_pawn(0,0)
@@ -43,12 +47,26 @@ func load_map(map_dir: String) -> void:
 			instanced_bar.position = instanced_pawn.position
 			bars.add_child(instanced_bar)
 			instanced_pawn.set_gui(selected_gui, instanced_bar)
+			instanced_pawn.set_team(team)
 	
 	map.load_tiles(map_json)
 				
 func _process(delta: float) -> void:
 	handle_controls()
 	control_camera(delta)
+
+	var game_state = check_win()
+	if game_state == 0:
+		return
+	
+	if game_state == 1:
+		print("YOU WIN")
+		# display win, exit to main menu
+		pass
+	else:
+		print("YOU LOSE")
+		# display lose, exit to main menu
+		pass
 
 func end_turn() -> void:
 	unselect_pawn()
@@ -102,9 +120,6 @@ func _on_move_pressed() -> void:
 func _on_throw_pressed() -> void:
 	selected_pawn.state = PawnScript.PawnState.THROWING
 
-func _on_kick_pressed() -> void:
-	pass # Replace with function body.
-
 func _on_end_turn_pressed() -> void:
 	end_turn()	
 
@@ -112,5 +127,25 @@ func set_watching_projectile(projectile: Projectile) -> void:
 	watching_projectile = projectile
 	projectiles.add_child(projectile)
 
-func end_projectile() -> void:
-	selected_pawn.state = PawnScript.PawnState.WAITING_FOR_ACTION
+func end_projectile(projectile: Node2D) -> void:
+	if projectile == watching_projectile:
+		selected_pawn.state = PawnScript.PawnState.WAITING_FOR_ACTION
+
+func check_win() -> int:
+	var player_alive = false
+	for child in team1.get_children():
+		if child.health > 0:
+			player_alive = true
+	
+	if not player_alive:
+		return -1
+
+	var computer_alive = false
+	for child in team2.get_children():
+		if child.health > 0:
+			computer_alive = true
+	
+	if not computer_alive: 
+		return 1
+	
+	return 0

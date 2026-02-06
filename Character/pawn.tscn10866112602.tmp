@@ -43,7 +43,7 @@ sprite_frames = ExtResource("2_pesg8")
 texture_filter = 1
 scale = Vector2(2, 2)
 sprite_frames = ExtResource("2_pesg8")
-animation = &"death"
+frame_progress = 0.57663065
 
 [node name="Highlight" type="AnimatedSprite2D" parent="AnimatedSprite2D" unique_id=1087420295]
 show_behind_parent = true

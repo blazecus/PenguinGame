@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dpaxmyi6djiif" path="res://Character/projectile.gd" id="1_tla7d"]
 [ext_resource type="Texture2D" uid="uid://bt6fw0k4eb5be" path="res://Assets/bomb2.png" id="2_uu30j"]
+[ext_resource type="Texture2D" uid="uid://bth8epp3ji6fn" path="res://Assets/explosion-Sheet.png" id="3_8ugre"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_uu30j"]
 radius = 180.0
@@ -97,6 +98,46 @@ region = Rect2(320, 0, 16, 16)
 atlas = ExtResource("2_uu30j")
 region = Rect2(336, 0, 16, 16)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_smtqc"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(0, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x7wbm"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(90, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j10w4"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(180, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_u7ajm"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(270, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qicxd"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(360, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_womam"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(450, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_54dx3"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(540, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7onng"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(630, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5t4d2"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(720, 0, 90, 90)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x0w08"]
+atlas = ExtResource("3_8ugre")
+region = Rect2(810, 0, 90, 90)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_x7wbm"]
 animations = [{
 "frames": [{
@@ -168,7 +209,42 @@ animations = [{
 }],
 "loop": true,
 "name": &"bomb",
-"speed": 5.0
+"speed": 7.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_smtqc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x7wbm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j10w4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_u7ajm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qicxd")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_womam")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_54dx3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7onng")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5t4d2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x0w08")
+}],
+"loop": true,
+"name": &"explosion",
+"speed": 30.0
 }]
 
 [node name="Projectile" type="RigidBody2D" unique_id=918950030]
@@ -197,4 +273,4 @@ texture_filter = 1
 position = Vector2(0, -4)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_x7wbm")
-animation = &"bomb"
+animation = &"explosion"
