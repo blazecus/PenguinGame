@@ -35,9 +35,11 @@ position = Vector2(16, 3.0000005)
 rotation = 0.61086524
 scale = Vector2(2, 2)
 sprite_frames = ExtResource("2_pesg8")
+animation = &"idle_s"
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1590779651]
 texture_filter = 1
 material = SubResource("ShaderMaterial_q7865")
 scale = Vector2(2, 2)
 sprite_frames = ExtResource("2_pesg8")
+animation = &"walk_w"

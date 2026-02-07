@@ -11,6 +11,17 @@ enum PawnState {
 	DEAD
 }
 
+const DIRECTION_STRINGS = [
+	"w",
+	"dw",
+	"d",
+	"ds",
+	"s",
+	"as",
+	"a",
+	"aw"
+]
+
 const PROJECTILE_SCENE = preload("res://Character/projectile.tscn")
 const Tile = preload("res://World/tile.gd")
 const Projectile = preload("res://Character/projectile.gd")
@@ -31,7 +42,7 @@ const DRAG_FORCES := {
 
 const TEAM_COLORS = [Color.BLUE, Color.RED]
 
-const BELLY_DRAG_MULTIPLIER = 0.2
+const BELLY_DRAG_MULTIPLIER = 0.1
 const BELLY_ROTATIONAL_SPEED = 1.7
 const BELLY_FORCE_MULTIPLIER = 0.5
 
@@ -61,7 +72,9 @@ const NO_COLLISION_LENGTH = 1.0
 
 const STOP_SPEED = 20.0
 
-const PENGUIN_MASS = 10.0
+const PENGUIN_MASS = 5.0
+
+const FAKE_ROTATION_DRAG = 10.0
 
 var moving = false
 var state: PawnState = PawnState.IDLE
@@ -106,15 +119,23 @@ var projectile_type = Projectile.ProjectileType.BOMB
 
 var prev_vel = Vector2.ZERO
 
+var prev_walking = false
+var walking = false
+var walking_angle = 0
+
+var fake_rotation = 0
+var fake_rotation_velocity = 0
+
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
 
 func _ready() -> void:
-	play_animation("default",0)
+	play_animation("idle_s",0)
 	mass = PENGUIN_MASS
 	contact_monitor = true
 	max_contacts_reported = 4
-
+	lock_rotation = true
+	fake_rotation = PI * 0.5
 
 func set_gui(gui_control: Node, bar_control: Node):
 	bar = bar_control
@@ -125,8 +146,11 @@ func set_team(new_team: int) -> void:
 	set_highlight_color(TEAM_COLORS[team])
 
 func _physics_process(delta: float) -> void:	
+	prev_walking = walking
+	walking = false
 	if health <= 0:
 		if sprite.animation == "death" and sprite.frame == 11:
+			# stupid to rely on animation frames but whatever
 			visible = false
 			bar.visible = false
 			if selected:
@@ -134,6 +158,12 @@ func _physics_process(delta: float) -> void:
 		return
 	tile_state = get_tile_state()
 	moving = check_moving()
+
+	fake_rotation += fake_rotation_velocity * delta
+	if abs(fake_rotation_velocity) <= FAKE_ROTATION_DRAG * delta:
+		fake_rotation_velocity = 0
+	else:
+		fake_rotation_velocity -= sign(fake_rotation_velocity) * FAKE_ROTATION_DRAG * delta
 	
 	var movement_input = handle_input()
 	compute_forces(movement_input, delta)
@@ -144,6 +174,7 @@ func _physics_process(delta: float) -> void:
 			state = PawnState.DONE_MOVING
 			gui.visible = true
 			gui.get_node("VBoxContainer").get_node("Move").disabled = true
+			enforce_front_rotation()
 	else:
 		slow_stopped()
 		if(state == PawnState.THROWING):
@@ -158,7 +189,7 @@ func _physics_process(delta: float) -> void:
 	handle_gui()
 	handle_sprites()
 	queue_redraw()
-
+	play_animation_current(choose_animation())
 
 func handle_sprites() -> void:
 	sprite.global_position = global_position + Vector2(0, height * 10.0)
@@ -170,14 +201,6 @@ func set_collision(toggle: int):
 
 func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 	pstate.angular_velocity = 0
-
-	if(!on_belly):
-		rotation = 0
-		set_deferred("lock_rotation", true)
-	else:
-		rotation = belly_direction.angle() - PI * 0.5
-		set_deferred("lock_rotation", false)
-
 	var delta = pstate.step
 
 	height += vertical_velocity * delta
@@ -202,8 +225,11 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 			#collide_with_wall(collision_direction, collision_info.x, collision_info.y)
 			if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
 				collide_with_wall(collision_info.x, collision_info.y)
-		#if collider is RigidBody2D:
-			
+		
+		elif collider.has_method("get_collision_info"):
+			var collision_info = collider.get_collision_info()
+			if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
+				collide_with_wall(collision_info.x, collision_info.y)
 
 	prev_vel = linear_velocity	
 
@@ -241,8 +267,16 @@ func handle_input() -> Vector2:
 		if Input.is_action_pressed("down"):
 			movement_input += Vector2.DOWN
 
+		if movement_input.length() > 0:
+			walking = true
+			walking_angle = movement_input.angle()
+		
 		if Input.is_action_just_pressed("shift"):
 			toggle_belly()
+	
+	if prev_walking and not walking:
+		fake_rotation = walking_angle
+		fake_rotation_velocity = 0
 
 	if selected:
 		if Input.is_action_just_pressed("space"):
@@ -372,7 +406,7 @@ func get_trajectory(throw_strength: Vector2) -> PackedVector2Array:
 
 func get_throw_strength() -> Vector2:
 	var twod = clamp((throw_line_mid - throw_line_start).length(), 0, Globals.THROW_MAX_PULL_LENGTH) * Globals.THROW_STRENGTH_MODIFIER
-	var height_strength = -clamp((throw_line_end.y - throw_line_mid.y), 0, THROW_HEIGHT_DRAG_LENGTH) * HEIGHT_THROW_STRENGTH
+	var height_strength = -clamp((throw_line_end.y - throw_line_mid.y), 2.0 / HEIGHT_THROW_STRENGTH, THROW_HEIGHT_DRAG_LENGTH) * HEIGHT_THROW_STRENGTH
 	if throw_line == 1:
 		height_strength = -2.0
 	elif height_strength > 0:
@@ -381,18 +415,21 @@ func get_throw_strength() -> Vector2:
 
 func compute_forces(movement_input: Vector2, delta: float) -> void:
 	var movement_force = Vector2.ZERO
-	if(!on_belly or height > 0):
-		movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
-	else:
-		if movement_input.y < 0:
-			movement_input.y *= 1.5
-		else:
-			movement_input.y = 0
+	
+	#if(!on_belly or height > 0):
+	#	movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
+	#else:
+	#	if movement_input.y < 0:
+	#		movement_input.y *= 1.5
+	#	else:
+	#		movement_input.y = 0
 		
-		belly_direction = belly_direction.rotated(BELLY_ROTATIONAL_SPEED * delta * movement_input.x).normalized()
+	#	belly_direction = belly_direction.rotated(BELLY_ROTATIONAL_SPEED * delta * movement_input.x).normalized()
 		
-		movement_force = movement_input.y * belly_direction * WALK_FORCES[tile_state] * BELLY_FORCE_MULTIPLIER
+	#	movement_force = movement_input.y * belly_direction * WALK_FORCES[tile_state] * BELLY_FORCE_MULTIPLIER
 
+	# gave up on old belly movement
+	movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
 	linear_damp = (AIRBORN_DRAG if height < 0 else DRAG_FORCES[tile_state]) * (BELLY_DRAG_MULTIPLIER if on_belly else 1.0)
 	apply_central_force(movement_force)
 
@@ -423,6 +460,11 @@ func unselect() -> void:
 	selected = false
 	# enforce idle state
 	state = PawnState.IDLE
+	enforce_front_rotation()
+
+func enforce_front_rotation() -> void:
+	if abs(fake_rotation_velocity) < 0.3:
+		fake_rotation = PI * 0.5
 
 func _on_move_pressed() -> void:
 	if(state == PawnState.WAITING_FOR_ACTION):
@@ -455,6 +497,7 @@ func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
 	#linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
 	#global_position += linear_velocity.normalized()
 	linear_velocity = linear_velocity.normalized() * (linear_velocity.length() * bounce_factor + flat_force)
+	fake_rotation_velocity = flat_force * 0.05
 	if flat_force > 0.0 or linear_velocity.length() > 100.0:
 		on_belly = false
 
@@ -476,6 +519,10 @@ func play_animation(animation: String, frame: int) -> void:
 	$AnimatedSprite2D.frame = frame
 	#$AnimatedSprite2D/Highlight.frame = frame
 	$Shadow.frame = frame
+
+func play_animation_current(animation: String) -> void:
+	$AnimatedSprite2D.play(animation)
+	$Shadow.play(animation)
 
 func set_highlight_color(hl_color: Color) -> void:
 	$AnimatedSprite2D.set_instance_shader_parameter("highlight_color", hl_color)
@@ -503,3 +550,20 @@ func get_projectile_count(proj_type: Projectile.ProjectileType) -> int:
 func set_proj_counts(item_counts: Array) -> void:
 	for i in range(len(item_counts)):
 		proj_counts[i] = item_counts[i]
+
+func choose_animation() -> String:
+	if health <= 0:
+		return "death"
+	var anim = "idle_"
+	if on_belly:
+		anim = "belly_"
+	elif walking:
+		anim = "walk_"
+	
+	if walking:
+		return anim + angle_to_string(walking_angle)
+	return anim + angle_to_string(fake_rotation)
+
+func angle_to_string(angle: float) -> String:
+	var index_angle = fposmod(angle + PI * 0.5, TAU)
+	return DIRECTION_STRINGS[int(round(index_angle / (PI * 0.25))) % 8]

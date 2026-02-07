@@ -14,11 +14,11 @@ enum ProjectileType {
 }
 
 const MASSES := {
-	ProjectileType.SNOWBALL : 1.0,
+	ProjectileType.SNOWBALL : 0.5,
 	ProjectileType.BOMB : 1.5,
 	ProjectileType.SPIKES : 2.0,
-	ProjectileType.BLOCK : 4.0,
-	ProjectileType.BUMPER : 3.0
+	ProjectileType.BLOCK : 2.0,
+	ProjectileType.BUMPER : 2.0
 }
 
 const ANIMATIONS := {
@@ -45,7 +45,7 @@ const AIRBORN_DRAG = 0.0
 @onready var explosion = $Explosion
 
 # magic number that makes the physics match up for some god forsaken reason
-const THROW_MODIFIER = 0.0045
+const THROW_MODIFIER = 0.008
 const HEIGHT_MODIFIER = 100.0
 const BOMB_TIME_LENGTH = 3.33
 const TORQUE_MODIFIER = 0.04
@@ -69,6 +69,7 @@ const WATCH_TIMER = 7.0
 const SNOWBALL_DAMAGE = 5.0
 const SNOWBALL_KNOCKBACK = 300.0
 const SPIKE_DAMAGE = 10.0
+const FAKE_BLOCK_MASS = 15.0
 
 var height = 0.0
 var vertical_velocity = 0.0
@@ -114,9 +115,15 @@ func set_type(new_type: ProjectileType) -> void:
 func throw(power: float, direction: Vector2, vertical_power: float):
 	# more goofiness to make trajectory scaling work for no reason
 	var scaling = (1.0 - (power / (Globals.THROW_MAX_PULL_LENGTH * Globals.THROW_STRENGTH_MODIFIER))) * MAGIC_THROW_DAMPER_MODIFIER + MAGIC_THROW_DAMPER_OFFSET
-	apply_central_impulse(direction * power * THROW_MODIFIER * scaling)
+	#apply_central_impulse(direction * power * THROW_MODIFIER * scaling)
+
+
+	linear_velocity = direction * power * scaling * THROW_MODIFIER / mass
 	apply_torque_impulse(power * TORQUE_MODIFIER)
 	vertical_velocity = vertical_power / mass
+
+	if type == ProjectileType.BLOCK:
+		mass = FAKE_BLOCK_MASS
 
 	if type == ProjectileType.SNOWBALL:
 		set_collision(3)
@@ -128,8 +135,13 @@ func _physics_process(delta: float) -> void:
 	tile_state = get_tile_state()
 
 	if tile_state == Tile.TileType.WATER:
-		end()
-		return
+		if type == ProjectileType.SNOWBALL:
+			if height >= 0:
+				end()
+				return
+		else:
+			end()
+			return
 
 	sprite.global_position = global_position + Vector2(0, height * HEIGHT_MODIFIER)	
 	shadow.global_position = global_position + Vector2(-height * HEIGHT_MODIFIER * SHADOW_RATIO, 0) + SHADOW_OFFSET
@@ -184,7 +196,7 @@ func explode() -> void:
 		if body.has_method("apply_external_impulse"):
 			if not check_for_wall(body.global_position):
 				var dir = (body.global_position - global_position)
-				var distance = clamp(EXPLOSION_RADIUS - dir.length(), 10, EXPLOSION_RADIUS)
+				var distance = clamp(EXPLOSION_RADIUS - dir.length(), 10, EXPLOSION_RADIUS * 0.7)
 				#body.apply_external_impulse(dir.normalized() *  distance * EXPLOSION_FORCE_MODIFIER)
 				body.linear_velocity = dir.normalized() * distance * EXPLOSION_FORCE_MODIFIER / body.mass
 
@@ -194,6 +206,9 @@ func explode() -> void:
 	freeze = true
 	$AnimatedSprite2D.play("explosion")
 	$Shadow.visible = false
+
+func apply_external_impulse():
+	pass #unused
 
 func terrain_explode() -> void:
 	for area in explosion.get_overlapping_areas():
@@ -270,12 +285,12 @@ func rect_normal(n: Vector2) -> Vector2:
 		return Vector2(0, sign(n.y))
 
 func _on_area_2d_body_entered(body: Node2D) -> void:
-		if body.has_method("add_tiles"):
-			bodies_on_top += 1
-			if type == ProjectileType.SPIKES and bodies_on_top == 1:
-				toggle_spikes(false)	
-				if body.has_method("take_damage"):
-					body.take_damage(SPIKE_DAMAGE)
+	if body.has_method("add_tiles"):
+		bodies_on_top += 1
+		if type == ProjectileType.SPIKES and bodies_on_top == 1:
+			toggle_spikes(false)	
+			if body.has_method("take_damage"):
+				body.take_damage(SPIKE_DAMAGE)
 			
 func _on_area_2d_body_exited(body: Node2D) -> void:
 	if body.has_method("add_tiles"):

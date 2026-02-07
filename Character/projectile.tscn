@@ -342,7 +342,7 @@ animation = &"bomb"
 texture_filter = 1
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_x7wbm")
-animation = &"snowball"
+animation = &"spikes"
 
 [node name="Area2D" type="Area2D" parent="." unique_id=175373118]
 
