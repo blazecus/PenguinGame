@@ -16,8 +16,8 @@ enum ProjectileType {
 const MASSES := {
 	ProjectileType.SNOWBALL : 1.0,
 	ProjectileType.BOMB : 1.5,
-	ProjectileType.SPIKES : 5.0,
-	ProjectileType.BLOCK : 15.0,
+	ProjectileType.SPIKES : 2.0,
+	ProjectileType.BLOCK : 4.0,
 	ProjectileType.BUMPER : 3.0
 }
 
@@ -67,6 +67,7 @@ const MAGIC_THROW_DAMPER_OFFSET = 0.8
 const BOUNCINESS = 3.5
 const WATCH_TIMER = 7.0
 const SNOWBALL_DAMAGE = 5.0
+const SNOWBALL_KNOCKBACK = 300.0
 const SPIKE_DAMAGE = 10.0
 
 var height = 0.0
@@ -117,7 +118,10 @@ func throw(power: float, direction: Vector2, vertical_power: float):
 	apply_torque_impulse(power * TORQUE_MODIFIER)
 	vertical_velocity = vertical_power / mass
 
-	set_collision(2)
+	if type == ProjectileType.SNOWBALL:
+		set_collision(3)
+	else:
+		set_collision(2)
 	linear_damp = 0
 
 func _physics_process(delta: float) -> void:
@@ -135,6 +139,8 @@ func _physics_process(delta: float) -> void:
 		height = 0.0
 		vertical_velocity = 0.0
 		set_collision(1)
+		if type == ProjectileType.SNOWBALL:
+			get_parent().get_parent().end_projectile(self)
 	vertical_velocity += GRAVITY * delta
 	
 	if type == ProjectileType.BOMB:
@@ -238,8 +244,13 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 		if type == ProjectileType.SNOWBALL:
 			if collider.has_method("take_damage"):
 				collider.take_damage(SNOWBALL_DAMAGE)
-			end()
-			return
+				collider.snowball_collision(-linear_velocity.normalized() * SNOWBALL_KNOCKBACK)
+				end()
+				return
+			if collider.get_parent().has_method("get_collision_info"):
+				if collider.get_parent().get_collision_info().y == 0.0:
+					end()
+					return
 		if collider.get_parent().has_method("get_collision_info"):
 			#var normal = rect_normal(state.get_contact_local_normal(i))
 			var collision_info = collider.get_parent().get_collision_info()

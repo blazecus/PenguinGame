@@ -1,10 +1,12 @@
 [gd_scene format=3 uid="uid://cuqu3xrpfofr4"]
 
 [ext_resource type="Script" uid="uid://dpaxmyi6djiif" path="res://Character/projectile.gd" id="1_tla7d"]
+[ext_resource type="Texture2D" uid="uid://dnx7p3n16ligo" path="res://Assets/wall_proj.png" id="2_rildm"]
 [ext_resource type="Texture2D" uid="uid://bt6fw0k4eb5be" path="res://Assets/bomb2.png" id="2_uu30j"]
 [ext_resource type="Texture2D" uid="uid://bth8epp3ji6fn" path="res://Assets/explosion-Sheet.png" id="3_8ugre"]
-[ext_resource type="Texture2D" uid="uid://2cexw3dlis1" path="res://Assets/bumper.png" id="4_3hite"]
+[ext_resource type="Texture2D" uid="uid://brqidnqc4orbb" path="res://Assets/bumper_proj.png" id="4_syrim"]
 [ext_resource type="Texture2D" uid="uid://nwev5jtnbenq" path="res://Assets/spikes_throw.png" id="5_rildm"]
+[ext_resource type="Texture2D" uid="uid://cf48t00l14v3q" path="res://Assets/snowball.png" id="6_httir"]
 [ext_resource type="Texture2D" uid="uid://c00sduih8mm10" path="res://Assets/spikes_throw2.png" id="6_syrim"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_8ugre"]
@@ -16,6 +18,10 @@ radius = 180.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_8ugre"]
 radius = 11.18034
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_eya05"]
+atlas = ExtResource("2_rildm")
+region = Rect2(0, 0, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_8ugre"]
 atlas = ExtResource("2_uu30j")
@@ -105,8 +111,8 @@ region = Rect2(320, 0, 16, 16)
 atlas = ExtResource("2_uu30j")
 region = Rect2(336, 0, 16, 16)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_eya05"]
-atlas = ExtResource("4_3hite")
+[sub_resource type="AtlasTexture" id="AtlasTexture_t0jim"]
+atlas = ExtResource("4_syrim")
 region = Rect2(0, 0, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_smtqc"]
@@ -149,6 +155,10 @@ region = Rect2(720, 0, 90, 90)
 atlas = ExtResource("3_8ugre")
 region = Rect2(810, 0, 90, 90)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_cnno2"]
+atlas = ExtResource("6_httir")
+region = Rect2(0, 0, 16, 16)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_4pnw6"]
 atlas = ExtResource("6_syrim")
 region = Rect2(0, 0, 16, 16)
@@ -159,7 +169,10 @@ region = Rect2(0, 0, 16, 16)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_x7wbm"]
 animations = [{
-"frames": [],
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_eya05")
+}],
 "loop": true,
 "name": &"block",
 "speed": 5.0
@@ -237,7 +250,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_eya05")
+"texture": SubResource("AtlasTexture_t0jim")
 }],
 "loop": true,
 "name": &"bumper",
@@ -280,6 +293,14 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_cnno2")
+}],
+"loop": true,
+"name": &"snowball",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_4pnw6")
 }, {
 "duration": 1.0,
@@ -294,6 +315,7 @@ animations = [{
 radius = 17.0
 
 [node name="Projectile" type="RigidBody2D" unique_id=918950030]
+z_index = 2
 physics_material_override = SubResource("PhysicsMaterial_8ugre")
 gravity_scale = 0.0
 inertia = 1.0
@@ -320,7 +342,7 @@ animation = &"bomb"
 texture_filter = 1
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_x7wbm")
-animation = &"spikes"
+animation = &"snowball"
 
 [node name="Area2D" type="Area2D" parent="." unique_id=175373118]
 

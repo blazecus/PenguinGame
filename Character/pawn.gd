@@ -458,6 +458,9 @@ func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
 	if flat_force > 0.0 or linear_velocity.length() > 100.0:
 		on_belly = false
 
+func snowball_collision(force: Vector2) -> void:
+	linear_velocity += force
+
 func slow_stopped() -> bool:
 	if linear_velocity.length() < STOP_SPEED:
 		linear_velocity = Vector2.ZERO
