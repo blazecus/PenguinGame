@@ -11,3 +11,6 @@ func layers_to_mask(layers: Array) -> int:
 	for layer in layers:
 		mask |= 1 << (layer - 1)
 	return mask
+
+func _ready():
+	randomize()

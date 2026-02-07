@@ -11,7 +11,6 @@ func _ready() -> void:
 		children.append(Array())
 		for j in range(map_size.y):
 			children[i].append(create_tile(i, j, Tile.TileType.ICE))
-	print("map set up")
 	
 func load_tiles(map: Dictionary) -> void:
 	var tiles = map["map"]

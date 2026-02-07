@@ -69,6 +69,7 @@ func load_map(map_dir: String) -> void:
 func _process(delta: float) -> void:
 	handle_controls()
 	control_camera(delta)
+	ai_turn()
 
 	var game_state = check_win()
 	if game_state == 0:
@@ -82,6 +83,17 @@ func _process(delta: float) -> void:
 		print("YOU LOSE")
 		# display lose, exit to main menu
 		pass
+
+func ai_turn():
+	if selected_pawn.team == 1:
+		if selected_pawn.state == PawnScript.PawnState.WAITING_FOR_ACTION:
+			if not selected_pawn.ai_moved:
+				selected_pawn.state = PawnScript.PawnState.WAITING_FOR_MOVEMENT
+		elif selected_pawn.state == PawnScript.PawnState.DONE_MOVING:
+			if not selected_pawn.ai_threw:
+				selected_pawn.state = PawnScript.PawnState.THROWING
+		if selected_pawn.state != PawnScript.PawnState.WATCHING and selected_pawn.ai_moved and selected_pawn.ai_threw:
+			end_turn()
 
 func end_turn() -> void:
 	unselect_pawn()
@@ -105,6 +117,16 @@ func handle_controls() -> void:
 
 	if selected_pawn.state == PawnScript.PawnState.THROWING:
 		pass
+
+func get_target_position() -> Vector2:
+	var target = Vector2.ZERO
+	var potential_targets = []
+	for child in team1.get_children():
+		if child.health > 0:
+			potential_targets.append(child.global_position)
+	if potential_targets.size() > 0:
+		target = potential_targets[randi_range(0, potential_targets.size() - 1)]
+	return target
 
 func get_pawn(team: int, offset: int) -> Node:
 	assert(offset < teams[team].get_child_count(), "not enough children in team")

@@ -117,8 +117,11 @@ func throw(power: float, direction: Vector2, vertical_power: float):
 	var scaling = (1.0 - (power / (Globals.THROW_MAX_PULL_LENGTH * Globals.THROW_STRENGTH_MODIFIER))) * MAGIC_THROW_DAMPER_MODIFIER + MAGIC_THROW_DAMPER_OFFSET
 	#apply_central_impulse(direction * power * THROW_MODIFIER * scaling)
 
+	print(power)
+	print(vertical_power)
+	print(direction)
 
-	linear_velocity = direction * power * scaling * THROW_MODIFIER / mass
+	linear_velocity = direction * power  / mass
 	apply_torque_impulse(power * TORQUE_MODIFIER)
 	vertical_velocity = vertical_power / mass
 

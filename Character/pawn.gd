@@ -131,8 +131,13 @@ var died = false
 
 const AI_WAIT = 0.7
 const AI_MOVEMENT_WAIT = 5.0
+const AI_MOVEMENT_POLLING = 0.4
+const AI_RAYCAST_LENGTH = 110
  
 var ai_wait = 0.0
+var ai_movement_setting = Vector2.ZERO
+var ai_moved = false
+var ai_threw = false
 
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
@@ -154,6 +159,7 @@ func set_team(new_team: int) -> void:
 	set_highlight_color(TEAM_COLORS[team])
 
 func _physics_process(delta: float) -> void:	
+	ai_wait += delta
 	handle_gui()
 	prev_walking = walking
 	walking = false
@@ -183,6 +189,7 @@ func _physics_process(delta: float) -> void:
 			state = PawnState.DONE_MOVING
 			gui.visible = true
 			gui.get_node("VBoxContainer").get_node("Move").disabled = true
+			ai_moved = true
 			enforce_front_rotation()
 	else:
 		slow_stopped()
@@ -261,19 +268,73 @@ func handle_gui() -> void:
 		gui.visible = (
 			state == PawnState.DONE_MOVING or 
 			state == PawnState.WAITING_FOR_ACTION
-		)
+		) and team == 0
+
+func ai_select_movement() -> Vector2:
+	if not state == PawnState.MOVING and not state == PawnState.WAITING_FOR_MOVEMENT:
+		return Vector2.ZERO
+	elif ai_wait < AI_MOVEMENT_POLLING:
+		return ai_movement_setting
+	
+	var directions = []
+	var weights = []
+	var total_weight = 0.0
+	if ai_movement_setting == Vector2.ZERO:
+		ai_movement_setting = Vector2.UP.rotated(randi_range(0,7) * PI * 0.25)
+
+	for i in range(8):
+		var dir = Vector2.UP.rotated(i * PI * 0.25)
+		var query = PhysicsRayQueryParameters2D.create(global_position, global_position + dir * AI_RAYCAST_LENGTH)
+		var collision = get_world_2d().direct_space_state.intersect_ray(query)
+		var weight = clamp(max(dir.dot(ai_movement_setting), 0.0), 0.05, 1.2)
+		if collision.size() == 0: 
+			directions.append(dir)
+			weights.append(weight)
+			total_weight += weight
+		elif collision["collider"] is not StaticBody2D and collision["collider"] is not RigidBody2D:
+			directions.append(dir)
+			weights.append(weight)
+			total_weight += weight
+	
+	var rf = randf() * total_weight
+	var random_choice = 0.0
+	if directions.size() > 0:
+		ai_movement_setting = directions[0]
+		for i in directions.size():
+			random_choice += weights[i]
+			if rf < random_choice:
+				ai_movement_setting = directions[i]
+				break
+	else:
+		ai_movement_setting = Vector2.UP.rotated(randi_range(0,7) * PI * 0.25)
+	
+	ai_wait = 0.0
+	return ai_movement_setting
+
+func ai_choose_projectile() -> Projectile.ProjectileType:
+	var potential_projectiles = []
+	for i in proj_counts.keys():
+		if i == Projectile.ProjectileType.SNOWBALL or proj_counts[i] > 0:
+			potential_projectiles.append(i)
+	return potential_projectiles[randi_range(0, potential_projectiles.size()-1)]
 
 func handle_input() -> Vector2:
 	var movement_input = Vector2.ZERO
 	if selected:
-		if Input.is_action_pressed("left"):
-			movement_input += Vector2.LEFT
-		if Input.is_action_pressed("right"):
-			movement_input += Vector2.RIGHT
-		if Input.is_action_pressed("up"):
-			movement_input += Vector2.UP
-		if Input.is_action_pressed("down"):
-			movement_input += Vector2.DOWN
+		if team == 0:
+			if Input.is_action_pressed("left"):
+				movement_input += Vector2.LEFT
+			if Input.is_action_pressed("right"):
+				movement_input += Vector2.RIGHT
+			if Input.is_action_pressed("up"):
+				movement_input += Vector2.UP
+			if Input.is_action_pressed("down"):
+				movement_input += Vector2.DOWN
+		else:
+			if movement_timer <= 0:
+				movement_input = Vector2.ZERO 
+			else:
+				movement_input = ai_select_movement()
 
 		if movement_input.length() > 0:
 			walking = true
@@ -304,6 +365,14 @@ func toggle_belly() -> void:
 			belly_direction = -linear_velocity.normalized()
 
 func handle_throw_input() -> void:
+	if team == 1:
+		var diff = get_parent().get_parent().get_target_position() - global_position
+		var proj_type = ai_choose_projectile()
+		var proj_strength = get_ai_throw_strength(diff.length()) 
+		throw_ai(diff.normalized(), proj_strength, proj_type)
+		
+		ai_threw = true
+
 	projectile_throw_strength = get_throw_strength()
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if not mouse_pressed and throw_line == 0:
@@ -336,10 +405,22 @@ func throw() -> void:
 	projectile.global_position = global_position
 
 	projectile.set_type(projectile_type)
-	projectile.throw(projectile_throw_strength.x, (throw_line_start - throw_line_mid), projectile_throw_strength.y)
+	projectile.throw(projectile_throw_strength.x, (throw_line_start - throw_line_mid).normalized(), projectile_throw_strength.y)
 	get_parent().get_parent().set_watching_projectile(projectile)
 	state = PawnState.WATCHING
 	proj_counts[projectile_type] -= 1
+
+func throw_ai(dir: Vector2, strength: Vector2, type: Projectile.ProjectileType) -> void:
+	set_collision(0)
+	no_collision = NO_COLLISION_LENGTH
+	var projectile = PROJECTILE_SCENE.instantiate()
+	projectile.global_position = global_position
+
+	projectile.set_type(type)
+	projectile.throw(strength.x, dir, strength.y)
+	get_parent().get_parent().set_watching_projectile(projectile)
+	state = PawnState.WATCHING
+	proj_counts[type] -= 1
 
 func _draw() -> void:
 	if throw_line >= 3 or throw_line < 1:
@@ -422,6 +503,11 @@ func get_throw_strength() -> Vector2:
 		height_strength = 0
 	return Vector2(twod, height_strength)
 
+func get_ai_throw_strength(dist: float) -> Vector2:
+	var twod = clamp(dist * 0.5, 0, Globals.THROW_MAX_PULL_LENGTH) * Globals.THROW_STRENGTH_MODIFIER
+	var height_strength = -clamp(dist * 0.1, 2.0 / HEIGHT_THROW_STRENGTH, THROW_HEIGHT_DRAG_LENGTH) * HEIGHT_THROW_STRENGTH
+	return Vector2(twod, height_strength)
+
 func compute_forces(movement_input: Vector2, delta: float) -> void:
 	var movement_force = Vector2.ZERO
 	
@@ -466,6 +552,10 @@ func select() -> void:
 	state = PawnState.WAITING_FOR_ACTION
 	movement_timer = MOVEMENT_LENGTH 
 	throw_line = 0
+	ai_wait = 0
+	ai_moved = false
+	ai_threw = false
+	ai_movement_setting = Vector2.ZERO
 
 func unselect() -> void:
 	selected = false
