@@ -125,6 +125,14 @@ var walking_angle = 0
 
 var fake_rotation = 0
 var fake_rotation_velocity = 0
+var died = false
+
+# bunch of AI timers
+
+const AI_WAIT = 0.7
+const AI_MOVEMENT_WAIT = 5.0
+ 
+var ai_wait = 0.0
 
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
@@ -146,6 +154,7 @@ func set_team(new_team: int) -> void:
 	set_highlight_color(TEAM_COLORS[team])
 
 func _physics_process(delta: float) -> void:	
+	handle_gui()
 	prev_walking = walking
 	walking = false
 	if health <= 0:
@@ -186,7 +195,6 @@ func _physics_process(delta: float) -> void:
 			no_collision = 0.0
 			set_collision(1)	
 
-	handle_gui()
 	handle_sprites()
 	queue_redraw()
 	play_animation_current(choose_animation())
@@ -257,7 +265,7 @@ func handle_gui() -> void:
 
 func handle_input() -> Vector2:
 	var movement_input = Vector2.ZERO
-	if(selected and (state == PawnState.WAITING_FOR_MOVEMENT or state == PawnState.MOVING) and movement_timer > 0.0):
+	if selected:
 		if Input.is_action_pressed("left"):
 			movement_input += Vector2.LEFT
 		if Input.is_action_pressed("right"):
@@ -271,8 +279,6 @@ func handle_input() -> Vector2:
 			walking = true
 			walking_angle = movement_input.angle()
 		
-		if Input.is_action_just_pressed("shift"):
-			toggle_belly()
 	
 	if prev_walking and not walking:
 		fake_rotation = walking_angle
@@ -282,6 +288,9 @@ func handle_input() -> Vector2:
 		if Input.is_action_just_pressed("space"):
 			vertical_velocity = -JUMP_VELOCITY
 			set_collision(2)
+
+		if Input.is_action_just_pressed("shift"):
+			toggle_belly()
 
 	if(state == PawnState.WAITING_FOR_MOVEMENT && movement_input.length() > 0):
 		state = PawnState.MOVING
@@ -429,7 +438,9 @@ func compute_forces(movement_input: Vector2, delta: float) -> void:
 	#	movement_force = movement_input.y * belly_direction * WALK_FORCES[tile_state] * BELLY_FORCE_MULTIPLIER
 
 	# gave up on old belly movement
-	movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
+
+	if(selected and (state == PawnState.WAITING_FOR_MOVEMENT or state == PawnState.MOVING) and movement_timer > 0.0):
+		movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
 	linear_damp = (AIRBORN_DRAG if height < 0 else DRAG_FORCES[tile_state]) * (BELLY_DRAG_MULTIPLIER if on_belly else 1.0)
 	apply_central_force(movement_force)
 
@@ -479,6 +490,8 @@ func apply_external_impulse(force: Vector2) -> void:
 
 func take_damage(amount: float) -> void:
 	health -= amount
+	if health <= 0:
+		die(false)
 
 func add_tiles(tile_type: Tile.TileType, num: int):
 	tile_counts[tile_type] += num
@@ -497,9 +510,7 @@ func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
 	#linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
 	#global_position += linear_velocity.normalized()
 	linear_velocity = linear_velocity.normalized() * (linear_velocity.length() * bounce_factor + flat_force)
-	fake_rotation_velocity = flat_force * 0.05
-	if flat_force > 0.0 or linear_velocity.length() > 100.0:
-		on_belly = false
+	fake_rotation_velocity = flat_force * 0.02 + bounce_factor
 
 func snowball_collision(force: Vector2) -> void:
 	linear_velocity += force
@@ -528,18 +539,20 @@ func set_highlight_color(hl_color: Color) -> void:
 	$AnimatedSprite2D.set_instance_shader_parameter("highlight_color", hl_color)
 
 func die(drown: bool) -> void:
+	if died: return
 	if drown:
 		health = 0
 	
 	on_belly = false
+	died = true
 
-	freeze = true
+	linear_velocity = Vector2.ZERO
 	collision_mask = 0
 	collision_layer = 0
-
+	
 	rotation = 0
 
-	play_animation("death", 0)
+	play_animation_current("death")
 
 func set_projectile_type(proj_type: Projectile.ProjectileType) -> void:
 	projectile_type = proj_type

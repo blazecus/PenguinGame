@@ -42,4 +42,4 @@ texture_filter = 1
 material = SubResource("ShaderMaterial_q7865")
 scale = Vector2(2, 2)
 sprite_frames = ExtResource("2_pesg8")
-animation = &"walk_w"
+animation = &"belly_w"
