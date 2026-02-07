@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c2hock8ft3nc3" path="res://Character/pawn.gd" id="1_doigq"]
 [ext_resource type="SpriteFrames" uid="uid://rstc7m58bfrv" path="res://Character/penguin.tres" id="2_pesg8"]
+[ext_resource type="Shader" uid="uid://bkvmjor5oe2i6" path="res://Character/pawn.gdshader" id="3_wdi18"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_pesg8"]
 friction = 0.0
@@ -11,27 +12,15 @@ bounce = 1.0
 radius = 18.0
 height = 61.0
 
-[sub_resource type="Shader" id="Shader_pesg8"]
-code = "shader_type canvas_item;
-
-instance uniform vec4 highlight_color = vec4(1.0, 0.0, 0.0, 1.0);
-
-void fragment() {
-    vec4 tex = texture(TEXTURE, UV);
-    if (tex.a == 0.0) {
-        discard;
-    }
-    COLOR = highlight_color;
-}"
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wdi18"]
-shader = SubResource("Shader_pesg8")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_q7865"]
+shader = ExtResource("3_wdi18")
 
 [node name="Pawn" type="RigidBody2D" unique_id=940266179]
+z_index = 1
 physics_material_override = SubResource("PhysicsMaterial_pesg8")
 gravity_scale = 0.0
 inertia = 1.0
-continuous_cd = 1
+continuous_cd = 2
 contact_monitor = true
 max_contacts_reported = 4
 script = ExtResource("1_doigq")
@@ -49,14 +38,6 @@ sprite_frames = ExtResource("2_pesg8")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1590779651]
 texture_filter = 1
+material = SubResource("ShaderMaterial_q7865")
 scale = Vector2(2, 2)
 sprite_frames = ExtResource("2_pesg8")
-animation = &"death"
-
-[node name="Highlight" type="AnimatedSprite2D" parent="AnimatedSprite2D" unique_id=1087420295]
-show_behind_parent = true
-texture_filter = 1
-material = SubResource("ShaderMaterial_wdi18")
-scale = Vector2(1.1, 1.1)
-sprite_frames = ExtResource("2_pesg8")
-frame_progress = 0.57663065

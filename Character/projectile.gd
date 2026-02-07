@@ -1,6 +1,7 @@
 extends RigidBody2D
 
 const GRAVITY = 20.0
+const STOP_SPEED = 20.0
 
 const Tile = preload("res://World/tile.gd")
 
@@ -17,7 +18,7 @@ const MASSES := {
 	ProjectileType.BOMB : 1.5,
 	ProjectileType.SPIKES : 5.0,
 	ProjectileType.BLOCK : 15.0,
-	ProjectileType.BUMPER : 15.0
+	ProjectileType.BUMPER : 3.0
 }
 
 const ANIMATIONS := {
@@ -34,6 +35,8 @@ const DRAG_FORCES := {
 	Tile.TileType.WATER: 0.3,
 	Tile.TileType.SPIKES: 2.0,
 }
+
+const BUMPER_STRENGTH = 825.0
 
 const AIRBORN_DRAG = 0.0
 
@@ -62,6 +65,9 @@ const MAGIC_THROW_DAMPER_MODIFIER = 2.8
 const MAGIC_THROW_DAMPER_OFFSET = 0.8
 
 const BOUNCINESS = 3.5
+const WATCH_TIMER = 7.0
+const SNOWBALL_DAMAGE = 5.0
+const SPIKE_DAMAGE = 10.0
 
 var height = 0.0
 var vertical_velocity = 0.0
@@ -69,8 +75,12 @@ var type = ProjectileType.SNOWBALL
 
 var bomb_timer = BOMB_TIME_LENGTH
 var exploded = false
+var bodies_on_top = 0
+
+var existence_timer = 0.0
 
 var prev_vel = Vector2.ZERO
+var grounded = false
 
 var tile_counts := {
 	Tile.TileType.ICE: 0,
@@ -93,6 +103,13 @@ func set_type(new_type: ProjectileType) -> void:
 	$AnimatedSprite2D.play(ANIMATIONS[type])
 	$Shadow.play(ANIMATIONS[type])
 
+	if type == ProjectileType.SPIKES:
+		$AnimatedSprite2D.pause()
+		$Shadow.pause()
+	
+	if type == ProjectileType.BLOCK or type == ProjectileType.SPIKES or type == ProjectileType.BUMPER:
+		lock_rotation = true
+	
 func throw(power: float, direction: Vector2, vertical_power: float):
 	# more goofiness to make trajectory scaling work for no reason
 	var scaling = (1.0 - (power / (Globals.THROW_MAX_PULL_LENGTH * Globals.THROW_STRENGTH_MODIFIER))) * MAGIC_THROW_DAMPER_MODIFIER + MAGIC_THROW_DAMPER_OFFSET
@@ -129,13 +146,32 @@ func _physics_process(delta: float) -> void:
 		if bomb_timer <= 0.0:
 			terrain_explode()
 			end()
-
+	
+	else:
+		if slow_stopped():
+			get_parent().get_parent().end_projectile(self)
+			if type == ProjectileType.SPIKES:
+				grounded = true
+				collision_mask = 0
+				collision_layer = 0
+				z_index = 0
+	
 	linear_damp = (AIRBORN_DRAG if height < 0 else DRAG_FORCES[tile_state]) 
 	angular_velocity = sign(angular_velocity) * clamp(abs(angular_velocity), 0, MAX_ANGULAR_VEL)
+	if existence_timer < WATCH_TIMER:
+		existence_timer+= delta
+		if existence_timer >= WATCH_TIMER:
+			get_parent().get_parent().end_projectile(self)
 
 func set_collision(toggle: int) -> void:
 	collision_layer = toggle
 	collision_mask = toggle
+
+func slow_stopped() -> bool:
+	if linear_velocity.length() < STOP_SPEED:
+		linear_velocity = Vector2.ZERO
+		return true
+	return false
 
 func explode() -> void:
 	for body in explosion.get_overlapping_bodies():
@@ -176,6 +212,11 @@ func end() -> void:
 func add_tiles(tile_type: Tile.TileType, num: int):
 	tile_counts[tile_type] += num
 
+func get_collision_info() -> Vector2:
+	if type == ProjectileType.BUMPER:
+		return Vector2(0, BUMPER_STRENGTH)
+	return Vector2.ZERO
+
 func get_tile_state() -> Tile.TileType:
 	if(tile_counts[Tile.TileType.GROUND] > 0):
 		return Tile.TileType.GROUND
@@ -194,6 +235,11 @@ func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	for i in range(state.get_contact_count()):
 		var collider = state.get_contact_collider_object(i)
+		if type == ProjectileType.SNOWBALL:
+			if collider.has_method("take_damage"):
+				collider.take_damage(SNOWBALL_DAMAGE)
+			end()
+			return
 		if collider.get_parent().has_method("get_collision_info"):
 			#var normal = rect_normal(state.get_contact_local_normal(i))
 			var collision_info = collider.get_parent().get_collision_info()
@@ -211,3 +257,20 @@ func rect_normal(n: Vector2) -> Vector2:
 		return Vector2(sign(n.x), 0)
 	else:
 		return Vector2(0, sign(n.y))
+
+func _on_area_2d_body_entered(body: Node2D) -> void:
+		if body.has_method("add_tiles"):
+			bodies_on_top += 1
+			if type == ProjectileType.SPIKES and bodies_on_top == 1:
+				toggle_spikes(false)	
+				if body.has_method("take_damage"):
+					body.take_damage(SPIKE_DAMAGE)
+			
+func _on_area_2d_body_exited(body: Node2D) -> void:
+	if body.has_method("add_tiles"):
+		bodies_on_top -= 1
+		if bodies_on_top == 0 and type == ProjectileType.SPIKES: toggle_spikes(true)
+
+func toggle_spikes(spike_toggle: bool) -> void:
+	$AnimatedSprite2D.frame = 0 if spike_toggle else 1
+	$Shadow.frame = 0 if spike_toggle else 1

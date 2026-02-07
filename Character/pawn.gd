@@ -89,6 +89,14 @@ var tile_counts := {
 	Tile.TileType.SPIKES: 0
 }
 
+var proj_counts := {
+	Projectile.ProjectileType.SNOWBALL : 0,
+	Projectile.ProjectileType.BOMB : 0,
+	Projectile.ProjectileType.SPIKES : 0,
+	Projectile.ProjectileType.BLOCK : 0,
+	Projectile.ProjectileType.BUMPER : 0
+}
+
 var mouse_pressed = false
 var throw_line = 0
 var throw_line_start = Vector2.ZERO
@@ -130,7 +138,7 @@ func _physics_process(delta: float) -> void:
 	var movement_input = handle_input()
 	compute_forces(movement_input, delta)
 
-	if(state == PawnState.MOVING):
+	if(state == PawnState.MOVING or state == PawnState.WAITING_FOR_MOVEMENT):
 		movement_timer -= delta
 		if(movement_timer <= 0.0 and slow_stopped()):
 			state = PawnState.DONE_MOVING
@@ -192,10 +200,11 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 			#	collision_direction.y = -collision_direction.y
 			
 			#collide_with_wall(collision_direction, collision_info.x, collision_info.y)
-			collide_with_wall(collision_info.x, collision_info.y)
-		if collider is RigidBody2D:
-			pass
-	
+			if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
+				collide_with_wall(collision_info.x, collision_info.y)
+		#if collider is RigidBody2D:
+			
+
 	prev_vel = linear_velocity	
 
 func rect_normal(n: Vector2) -> Vector2:
@@ -287,6 +296,7 @@ func throw() -> void:
 	projectile.throw(projectile_throw_strength.x, (throw_line_start - throw_line_mid), projectile_throw_strength.y)
 	get_parent().get_parent().set_watching_projectile(projectile)
 	state = PawnState.WATCHING
+	proj_counts[projectile_type] -= 1
 
 func _draw() -> void:
 	if throw_line >= 3 or throw_line < 1:
@@ -457,15 +467,15 @@ func slow_stopped() -> bool:
 
 func play_animation(animation: String, frame: int) -> void:
 	$AnimatedSprite2D.play(animation)
-	$AnimatedSprite2D/Highlight.play(animation)
+	#$AnimatedSprite2D/Highlight.play(animation)
 	$Shadow.play(animation)
 
 	$AnimatedSprite2D.frame = frame
-	$AnimatedSprite2D/Highlight.frame = frame
+	#$AnimatedSprite2D/Highlight.frame = frame
 	$Shadow.frame = frame
 
 func set_highlight_color(hl_color: Color) -> void:
-	$AnimatedSprite2D/Highlight.set_instance_shader_parameter("highlight_color", hl_color)
+	$AnimatedSprite2D.set_instance_shader_parameter("highlight_color", hl_color)
 
 func die(drown: bool) -> void:
 	if drown:
@@ -480,3 +490,13 @@ func die(drown: bool) -> void:
 	rotation = 0
 
 	play_animation("death", 0)
+
+func set_projectile_type(proj_type: Projectile.ProjectileType) -> void:
+	projectile_type = proj_type
+
+func get_projectile_count(proj_type: Projectile.ProjectileType) -> int:
+	return proj_counts[proj_type]
+
+func set_proj_counts(item_counts: Array) -> void:
+	for i in range(len(item_counts)):
+		proj_counts[i] = item_counts[i]

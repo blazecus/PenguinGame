@@ -21,6 +21,15 @@ const Map = preload("res://World/Map.gd")
 @onready var map = $Map
 @onready var projectiles = $Projectiles
 
+@onready var projectile_menu = $Control/VBoxContainer2
+@onready var proj_buttons  := {
+	Projectile.ProjectileType.SNOWBALL : projectile_menu.get_node("Snowball"),
+	Projectile.ProjectileType.BOMB : projectile_menu.get_node("Bomb"),
+	Projectile.ProjectileType.SPIKES : projectile_menu.get_node("Spikes"),
+	Projectile.ProjectileType.BLOCK : projectile_menu.get_node("Block"),
+	Projectile.ProjectileType.BUMPER : projectile_menu.get_node("Bumper")
+}
+
 var team_turns = [0,0]
 var current_team = 0
 var camera_goal_position = Vector2.ZERO
@@ -46,7 +55,7 @@ func load_map(map_dir: String) -> void:
 				(-Map.map_size.x * 0.5 + pawn[0] - 1) * Tile.TILE_SIZE,
 				(-Map.map_size.y * 0.5 + pawn[1] - 1) * Tile.TILE_SIZE
 			)
-			#instanced_pawn.position = Vector2(pawn[0], pawn[1])
+			instanced_pawn.set_proj_counts(map_json["items"][team])
 			teams[team].add_child(instanced_pawn)
 
 			var instanced_bar = BAR_SCENE.instantiate()
@@ -104,6 +113,12 @@ func get_pawn(team: int, offset: int) -> Node:
 func select_pawn(team: int, offset: int) -> void:
 	selected_pawn = get_pawn(team, offset)
 	selected_pawn.select()
+	projectile_menu.visible = false
+	for i in proj_buttons.keys():
+		if i != Projectile.ProjectileType.SNOWBALL:	
+			var item_count = selected_pawn.get_projectile_count(i)
+			proj_buttons[i].text = proj_buttons[i].text.substr(0, proj_buttons[i].text.length() - 1) + str(item_count)
+			proj_buttons[i].disabled = item_count <= 0
 
 func unselect_pawn() -> void:
 	selected_pawn.unselect()
@@ -124,7 +139,7 @@ func _on_move_pressed() -> void:
 	selected_pawn._on_move_pressed()	
 
 func _on_throw_pressed() -> void:
-	selected_pawn.state = PawnScript.PawnState.THROWING
+	projectile_menu.visible = not projectile_menu.visible
 
 func _on_end_turn_pressed() -> void:
 	end_turn()	
@@ -136,6 +151,7 @@ func set_watching_projectile(projectile: Projectile) -> void:
 func end_projectile(projectile: Node2D) -> void:
 	if projectile == watching_projectile:
 		selected_pawn.state = PawnScript.PawnState.WAITING_FOR_ACTION
+		watching_projectile = null
 
 func check_win() -> int:
 	var player_alive = false
@@ -155,3 +171,28 @@ func check_win() -> int:
 		return 1
 	
 	return 0
+
+
+func _on_snowball_pressed() -> void:
+	select_projectile(Projectile.ProjectileType.SNOWBALL)
+
+
+func _on_bomb_pressed() -> void:
+	select_projectile(Projectile.ProjectileType.BOMB)
+
+
+func _on_spikes_pressed() -> void:
+	select_projectile(Projectile.ProjectileType.SPIKES)
+
+
+func _on_block_pressed() -> void:
+	select_projectile(Projectile.ProjectileType.BLOCK)
+
+
+func _on_bumper_pressed() -> void:
+	select_projectile(Projectile.ProjectileType.BUMPER)
+
+func select_projectile(proj_type: Projectile.ProjectileType) -> void:
+	selected_pawn.state = PawnScript.PawnState.THROWING
+	selected_pawn.set_projectile_type(proj_type)
+	projectile_menu.visible = false

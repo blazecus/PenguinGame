@@ -3,6 +3,9 @@
 [ext_resource type="Script" uid="uid://dpaxmyi6djiif" path="res://Character/projectile.gd" id="1_tla7d"]
 [ext_resource type="Texture2D" uid="uid://bt6fw0k4eb5be" path="res://Assets/bomb2.png" id="2_uu30j"]
 [ext_resource type="Texture2D" uid="uid://bth8epp3ji6fn" path="res://Assets/explosion-Sheet.png" id="3_8ugre"]
+[ext_resource type="Texture2D" uid="uid://2cexw3dlis1" path="res://Assets/bumper.png" id="4_3hite"]
+[ext_resource type="Texture2D" uid="uid://nwev5jtnbenq" path="res://Assets/spikes_throw.png" id="5_rildm"]
+[ext_resource type="Texture2D" uid="uid://c00sduih8mm10" path="res://Assets/spikes_throw2.png" id="6_syrim"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_8ugre"]
 friction = 0.0
@@ -102,6 +105,10 @@ region = Rect2(320, 0, 16, 16)
 atlas = ExtResource("2_uu30j")
 region = Rect2(336, 0, 16, 16)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_eya05"]
+atlas = ExtResource("4_3hite")
+region = Rect2(0, 0, 16, 16)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_smtqc"]
 atlas = ExtResource("3_8ugre")
 region = Rect2(0, 0, 90, 90)
@@ -142,8 +149,21 @@ region = Rect2(720, 0, 90, 90)
 atlas = ExtResource("3_8ugre")
 region = Rect2(810, 0, 90, 90)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_4pnw6"]
+atlas = ExtResource("6_syrim")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l7xyl"]
+atlas = ExtResource("5_rildm")
+region = Rect2(0, 0, 16, 16)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_x7wbm"]
 animations = [{
+"frames": [],
+"loop": true,
+"name": &"block",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_8ugre")
@@ -217,6 +237,14 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_eya05")
+}],
+"loop": true,
+"name": &"bumper",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_smtqc")
 }, {
 "duration": 1.0,
@@ -249,12 +277,27 @@ animations = [{
 "loop": true,
 "name": &"explosion",
 "speed": 30.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4pnw6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l7xyl")
+}],
+"loop": true,
+"name": &"spikes",
+"speed": 5.0
 }]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_t0jim"]
+radius = 17.0
 
 [node name="Projectile" type="RigidBody2D" unique_id=918950030]
 physics_material_override = SubResource("PhysicsMaterial_8ugre")
 gravity_scale = 0.0
 inertia = 1.0
+continuous_cd = 2
 script = ExtResource("1_tla7d")
 
 [node name="Explosion" type="Area2D" parent="." unique_id=1273115349]
@@ -267,7 +310,7 @@ shape = SubResource("CircleShape2D_8ugre")
 
 [node name="Shadow" type="AnimatedSprite2D" parent="." unique_id=1925996130]
 modulate = Color(0, 0, 0, 0.654902)
-position = Vector2(8, -2)
+position = Vector2(12, -6)
 rotation = 0.61086524
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_x7wbm")
@@ -275,7 +318,14 @@ animation = &"bomb"
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1283292583]
 texture_filter = 1
-position = Vector2(0, -4)
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_x7wbm")
-animation = &"explosion"
+animation = &"spikes"
+
+[node name="Area2D" type="Area2D" parent="." unique_id=175373118]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=2028137744]
+shape = SubResource("CircleShape2D_t0jim")
+
+[connection signal="body_entered" from="Area2D" to="." method="_on_area_2d_body_entered"]
+[connection signal="body_exited" from="Area2D" to="." method="_on_area_2d_body_exited"]

@@ -16,14 +16,8 @@ script = ExtResource("1_8a836")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1918730371]
 
-[node name="Bars" type="Control" parent="." unique_id=1743594739]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
 [node name="Control" type="Control" parent="." unique_id=1213574379]
-z_index = 100
+z_index = 10
 layout_mode = 3
 anchors_preset = 0
 offset_left = 66.0
@@ -56,11 +50,12 @@ text = "End Turn
 "
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Control" unique_id=385040471]
+visible = false
 layout_mode = 0
-offset_left = 146.0
-offset_top = 61.0
-offset_right = 262.0
-offset_bottom = 232.0
+offset_left = 145.0
+offset_top = 26.0
+offset_right = 261.0
+offset_bottom = 127.0
 
 [node name="Snowball" type="Button" parent="Control/VBoxContainer2" unique_id=250662412]
 layout_mode = 2
@@ -82,6 +77,12 @@ text = "Block0"
 [node name="Bumper" type="Button" parent="Control/VBoxContainer2" unique_id=150449920]
 layout_mode = 2
 text = "Bumper0"
+
+[node name="Bars" type="Control" parent="." unique_id=1743594739]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
 
 [connection signal="pressed" from="Control/VBoxContainer/Move" to="." method="_on_move_pressed"]
 [connection signal="pressed" from="Control/VBoxContainer/Throw" to="." method="_on_throw_pressed"]
