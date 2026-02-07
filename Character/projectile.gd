@@ -47,6 +47,8 @@ const HEIGHT_MODIFIER = 100.0
 const BOMB_TIME_LENGTH = 3.33
 const TORQUE_MODIFIER = 0.04
 const BOUNCE_TORQUE_MODIFIER = 0.06
+const ANGULAR_DAMP = 0.4
+const MAX_ANGULAR_VEL = 70.0
 
 const EXPLOSION_RADIUS = 180.0
 const EXPLOSION_FORCE_MODIFIER = 100.0
@@ -81,7 +83,8 @@ var tile_state = Tile.TileType.ICE
 
 func _ready() -> void:
 	contact_monitor = true
-	max_contacts_reported = 8
+	max_contacts_reported = 4
+	angular_damp = ANGULAR_DAMP
 
 func set_type(new_type: ProjectileType) -> void:
 	type = new_type
@@ -91,7 +94,7 @@ func set_type(new_type: ProjectileType) -> void:
 	$Shadow.play(ANIMATIONS[type])
 
 func throw(power: float, direction: Vector2, vertical_power: float):
-	# more goofy shit to make trajectory scaling work for no reason
+	# more goofiness to make trajectory scaling work for no reason
 	var scaling = (1.0 - (power / (Globals.THROW_MAX_PULL_LENGTH * Globals.THROW_STRENGTH_MODIFIER))) * MAGIC_THROW_DAMPER_MODIFIER + MAGIC_THROW_DAMPER_OFFSET
 	apply_central_impulse(direction * power * THROW_MODIFIER * scaling)
 	apply_torque_impulse(power * TORQUE_MODIFIER)
@@ -128,7 +131,8 @@ func _physics_process(delta: float) -> void:
 			end()
 
 	linear_damp = (AIRBORN_DRAG if height < 0 else DRAG_FORCES[tile_state]) 
-	
+	angular_velocity = sign(angular_velocity) * clamp(abs(angular_velocity), 0, MAX_ANGULAR_VEL)
+
 func set_collision(toggle: int) -> void:
 	collision_layer = toggle
 	collision_mask = toggle
@@ -147,6 +151,7 @@ func explode() -> void:
 	exploded = true
 	freeze = true
 	$AnimatedSprite2D.play("explosion")
+	$Shadow.visible = false
 
 func terrain_explode() -> void:
 	for area in explosion.get_overlapping_areas():
@@ -180,24 +185,25 @@ func get_tile_state() -> Tile.TileType:
 		return Tile.TileType.WATER
 	return Tile.TileType.ICE
 
-func collide_with_wall(normal: Vector2, bounce_factor: float, flat_force: float) -> void:
+func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
 	apply_torque_impulse((bounce_factor * prev_vel.length() + flat_force) * BOUNCE_TORQUE_MODIFIER)
-	linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
-	global_position += linear_velocity.normalized() * 4.0
+	#linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
+	#global_position += linear_velocity.normalized() * 4.0
+	linear_velocity = linear_velocity.normalized() * (linear_velocity.length() * bounce_factor + flat_force)
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	for i in range(state.get_contact_count()):
 		var collider = state.get_contact_collider_object(i)
 		if collider.get_parent().has_method("get_collision_info"):
-			var normal = rect_normal(state.get_contact_local_normal(i))
+			#var normal = rect_normal(state.get_contact_local_normal(i))
 			var collision_info = collider.get_parent().get_collision_info()
-			var collision_direction = prev_vel.normalized()
-			if abs(normal.x) > 0:
-				collision_direction.x = -collision_direction.x
-			else:
-				collision_direction.y = -collision_direction.y
+			#var collision_direction = prev_vel.normalized()
+			#if abs(normal.x) > 0:
+				#collision_direction.x = -collision_direction.x
+			#else:
+				#collision_direction.y = -collision_direction.y
 			
-			collide_with_wall(collision_direction, collision_info.x, collision_info.y)
+			collide_with_wall(collision_info.x, collision_info.y)
 	prev_vel = linear_velocity
 
 func rect_normal(n: Vector2) -> Vector2:

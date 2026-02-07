@@ -373,6 +373,9 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_4ru17"]
+bounce = 10.0
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_5dwmc"]
 size = Vector2(32, 32)
 
@@ -391,6 +394,7 @@ sprite_frames = SubResource("SpriteFrames_kfadh")
 animation = &"water2"
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1821137449]
+physics_material_override = SubResource("PhysicsMaterial_4ru17")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1504349889]
 shape = SubResource("RectangleShape2D_5dwmc")

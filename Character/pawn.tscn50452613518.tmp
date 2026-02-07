@@ -3,10 +3,6 @@
 [ext_resource type="Script" uid="uid://c2hock8ft3nc3" path="res://Character/pawn.gd" id="1_doigq"]
 [ext_resource type="SpriteFrames" uid="uid://rstc7m58bfrv" path="res://Character/penguin.tres" id="2_pesg8"]
 
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_pesg8"]
-friction = 0.0
-bounce = 1.0
-
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_pesg8"]
 radius = 18.0
 height = 61.0
@@ -28,7 +24,6 @@ void fragment() {
 shader = SubResource("Shader_pesg8")
 
 [node name="Pawn" type="RigidBody2D" unique_id=940266179]
-physics_material_override = SubResource("PhysicsMaterial_pesg8")
 gravity_scale = 0.0
 inertia = 1.0
 continuous_cd = 1

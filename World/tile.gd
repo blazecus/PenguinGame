@@ -20,8 +20,8 @@ const TILE_MAPPING := {
 
 const TILE_SIZE = 32
 const BUMPER_BOUNCE = 0.0 
-const BUMPER_FLAT_FORCE = 700.0
-const WALL_BOUNCE = 0.6
+const BUMPER_FLAT_FORCE = 825.0
+const WALL_BOUNCE = 0.85
 const WALL_FLAT_FORCE = 0.0
 const SPIKE_DAMAGE = 10.0
 
@@ -41,6 +41,14 @@ func set_type(new_type: TileType):
 
 		$StaticBody2D.collision_layer = 3
 		$StaticBody2D.collision_mask = 3
+
+		var mat := PhysicsMaterial.new()
+		mat.friction = 0.0
+		if type == TileType.WALL:
+			mat.bounce = 1.0
+		else:
+			mat.bounce = 100.0
+		$StaticBody2D.set_physics_material_override(mat)
 	else:
 		$Area2D.collision_layer = 1
 		$Area2D.collision_mask = 1
@@ -53,9 +61,10 @@ func set_type(new_type: TileType):
 	else:
 		$AnimatedSprite2D.play(TILE_MAPPING[type])
 		$AnimatedSprite2D.pause()
+		
 	if type == TileType.SPIKES:
 		toggle_spikes(true)
-	else:
+	elif type != TileType.WATER:
 		var random_frame = randi_range(0, $AnimatedSprite2D.sprite_frames.get_frame_count(TILE_MAPPING[type]) - 1)	
 		$AnimatedSprite2D.frame = random_frame
 
@@ -87,7 +96,7 @@ func get_collision_info() -> Vector2:
 		return Vector2.ZERO
 
 func explosion_damage() -> void:
-	if type == TileType.ICE:
+	if type == TileType.ICE or type == TileType.GROUND:
 		set_type(TileType.WATER)
 
 func get_type():

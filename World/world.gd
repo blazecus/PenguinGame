@@ -8,6 +8,7 @@ const BAR_SCENE = preload("res://Character/Bars.tscn")
 const PawnScript = preload("res://Character/pawn.gd")
 const Tile = preload("res://World/tile.gd")
 const Projectile = preload("res://Character/projectile.gd")
+const Map = preload("res://World/Map.gd")
 
 @onready var team1 = $Team1
 @onready var team2 = $Team2
@@ -40,7 +41,12 @@ func load_map(map_dir: String) -> void:
 	for team in range(2):
 		for pawn in map_json["teams"][team]:
 			var instanced_pawn = PAWN_SCENE.instantiate()
-			instanced_pawn.position = Vector2(pawn[0], pawn[1])
+
+			instanced_pawn.position = Vector2(
+				(-Map.map_size.x * 0.5 + pawn[0] - 1) * Tile.TILE_SIZE,
+				(-Map.map_size.y * 0.5 + pawn[1] - 1) * Tile.TILE_SIZE
+			)
+			#instanced_pawn.position = Vector2(pawn[0], pawn[1])
 			teams[team].add_child(instanced_pawn)
 
 			var instanced_bar = BAR_SCENE.instantiate()

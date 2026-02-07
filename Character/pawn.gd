@@ -105,7 +105,7 @@ func _ready() -> void:
 	play_animation("default",0)
 	mass = PENGUIN_MASS
 	contact_monitor = true
-	max_contacts_reported = 8
+	max_contacts_reported = 4
 
 
 func set_gui(gui_control: Node, bar_control: Node):
@@ -183,15 +183,18 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 	for i in range(pstate.get_contact_count()):
 		var collider = pstate.get_contact_collider_object(i)
 		if collider.get_parent().has_method("get_collision_info"):
-			var normal = rect_normal(pstate.get_contact_local_normal(i))
+			#var normal = rect_normal(pstate.get_contact_local_normal(i))
 			var collision_info = collider.get_parent().get_collision_info()
-			var collision_direction = prev_vel.normalized()
-			if abs(normal.x) > 0:
-				collision_direction.x = -collision_direction.x
-			else:
-				collision_direction.y = -collision_direction.y
+			#var collision_direction = prev_vel.normalized()
+			#if abs(normal.x) > 0:
+			#	collision_direction.x = -collision_direction.x
+			#else:
+			#	collision_direction.y = -collision_direction.y
 			
-			collide_with_wall(collision_direction, collision_info.x, collision_info.y)
+			#collide_with_wall(collision_direction, collision_info.x, collision_info.y)
+			collide_with_wall(collision_info.x, collision_info.y)
+		if collider is RigidBody2D:
+			pass
 	
 	prev_vel = linear_velocity	
 
@@ -438,10 +441,12 @@ func get_tile_state() -> Tile.TileType:
 	elif tile_counts[Tile.TileType.WATER] > 0: die(true)
 	return Tile.TileType.WATER
 
-func collide_with_wall(normal: Vector2, bounce_factor: float, flat_force: float) -> void:
-	linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
-	global_position += linear_velocity.normalized()
-	on_belly = false
+func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
+	#linear_velocity = normal * (prev_vel.length() * bounce_factor + flat_force)
+	#global_position += linear_velocity.normalized()
+	linear_velocity = linear_velocity.normalized() * (linear_velocity.length() * bounce_factor + flat_force)
+	if flat_force > 0.0 or linear_velocity.length() > 100.0:
+		on_belly = false
 
 func slow_stopped() -> bool:
 	if linear_velocity.length() < STOP_SPEED:
@@ -465,9 +470,13 @@ func set_highlight_color(hl_color: Color) -> void:
 func die(drown: bool) -> void:
 	if drown:
 		health = 0
+	
+	on_belly = false
 
 	freeze = true
 	collision_mask = 0
 	collision_layer = 0
+
+	rotation = 0
 
 	play_animation("death", 0)
