@@ -93,6 +93,11 @@ var tile_counts := {
 
 var tile_state = Tile.TileType.ICE
 
+signal s_explode
+signal s_collide
+signal s_spikes
+signal s_bumper
+
 func _ready() -> void:
 	contact_monitor = true
 	max_contacts_reported = 4
@@ -113,14 +118,6 @@ func set_type(new_type: ProjectileType) -> void:
 		lock_rotation = true
 	
 func throw(power: float, direction: Vector2, vertical_power: float):
-	# more goofiness to make trajectory scaling work for no reason
-	var scaling = (1.0 - (power / (Globals.THROW_MAX_PULL_LENGTH * Globals.THROW_STRENGTH_MODIFIER))) * MAGIC_THROW_DAMPER_MODIFIER + MAGIC_THROW_DAMPER_OFFSET
-	#apply_central_impulse(direction * power * THROW_MODIFIER * scaling)
-
-	print(power)
-	print(vertical_power)
-	print(direction)
-
 	linear_velocity = direction * power  / mass
 	apply_torque_impulse(power * TORQUE_MODIFIER)
 	vertical_velocity = vertical_power / mass
@@ -151,11 +148,11 @@ func _physics_process(delta: float) -> void:
 
 	height += vertical_velocity * delta
 	if(height >= 0):
+		if height - vertical_velocity * delta < 0:
+			emit_signal("s_collide")
 		height = 0.0
 		vertical_velocity = 0.0
 		set_collision(1)
-		if type == ProjectileType.SNOWBALL:
-			get_parent().get_parent().end_projectile(self)
 	vertical_velocity += GRAVITY * delta
 	
 	if type == ProjectileType.BOMB:
@@ -209,6 +206,7 @@ func explode() -> void:
 	freeze = true
 	$AnimatedSprite2D.play("explosion")
 	$Shadow.visible = false
+	emit_signal("s_explode")
 
 func apply_external_impulse():
 	pass #unused
@@ -259,27 +257,31 @@ func collide_with_wall(bounce_factor: float, flat_force: float) -> void:
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	for i in range(state.get_contact_count()):
 		var collider = state.get_contact_collider_object(i)
+		emit_signal("s_collide")
 		if type == ProjectileType.SNOWBALL:
 			if collider.has_method("take_damage"):
-				collider.take_damage(SNOWBALL_DAMAGE)
-				collider.snowball_collision(-linear_velocity.normalized() * SNOWBALL_KNOCKBACK)
-				end()
-				return
-			if collider.get_parent().has_method("get_collision_info"):
-				if collider.get_parent().get_collision_info().y == 0.0:
-					end()
-					return
+				if prev_vel.length() > 200.0:	
+					collider.take_damage(SNOWBALL_DAMAGE)
+					collider.snowball_collision(-linear_velocity.normalized() * SNOWBALL_KNOCKBACK)
 		if collider.get_parent().has_method("get_collision_info"):
 			#var normal = rect_normal(state.get_contact_local_normal(i))
-			var collision_info = collider.get_parent().get_collision_info()
 			#var collision_direction = prev_vel.normalized()
 			#if abs(normal.x) > 0:
 				#collision_direction.x = -collision_direction.x
 			#else:
 				#collision_direction.y = -collision_direction.y
 			
-			collide_with_wall(collision_info.x, collision_info.y)
+			handle_collision(collider.get_parent().get_collision_info())
+		elif collider.has_method("get_collision_info"):
+			handle_collision(collider.get_collision_info())
+
 	prev_vel = linear_velocity
+
+func handle_collision(collision_info: Vector2) -> void:
+	if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
+		if collision_info.y > 0:
+			emit_signal("s_bumper") 
+		collide_with_wall(collision_info.x, collision_info.y)
 
 func rect_normal(n: Vector2) -> Vector2:
 	if abs(n.x) > abs(n.y):
@@ -303,3 +305,4 @@ func _on_area_2d_body_exited(body: Node2D) -> void:
 func toggle_spikes(spike_toggle: bool) -> void:
 	$AnimatedSprite2D.frame = 0 if spike_toggle else 1
 	$Shadow.frame = 0 if spike_toggle else 1
+	emit_signal("s_spikes")

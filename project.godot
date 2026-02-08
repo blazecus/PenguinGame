@@ -10,10 +10,12 @@ config_version=5
 
 [application]
 
-config/name="PenguinGame"
-run/main_scene="uid://cx1jioga61fyi"
+config/name="Flockers"
+config/description="Turn based penguin combat"
+config/version="1.0"
+run/main_scene="uid://cv4bgvvc5dq3v"
 config/features=PackedStringArray("4.6", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="uid://cbvoafoa1hos"
 
 [autoload]
 
@@ -23,6 +25,7 @@ Globals="*uid://rvprpei45f8e"
 
 window/size/viewport_width=900
 window/size/viewport_height=600
+window/stretch/mode="canvas_items"
 
 [input]
 

@@ -1,0 +1,427 @@
+[gd_scene format=3 uid="uid://cv4bgvvc5dq3v"]
+
+[ext_resource type="Script" uid="uid://c38g3xrtvhtnp" path="res://Menus/main_menu.gd" id="1_at0u2"]
+[ext_resource type="AudioStream" uid="uid://d2p54bm8fwa3j" path="res://Assets/sound/menu2.mp3" id="1_jf8mj"]
+[ext_resource type="PackedScene" uid="uid://hvpf0nex82ol" path="res://World/Map.tscn" id="2_11gta"]
+[ext_resource type="FontFile" uid="uid://d4ktqvro63ffh" path="res://Assets/ARCADEPI.TTF" id="4_cxdly"]
+[ext_resource type="FontFile" uid="uid://dcpe3igmi2tpv" path="res://Assets/Pixel Game.otf" id="4_vxn86"]
+[ext_resource type="Texture2D" uid="uid://kgg4ajjmdoib" path="res://Assets/button_long.png" id="5_gn11b"]
+[ext_resource type="Texture2D" uid="uid://dkg3genmigkyu" path="res://Assets/button_long_down.png" id="6_uayf2"]
+[ext_resource type="Texture2D" uid="uid://b1b14r7b4628j" path="res://Assets/button_long_hover.png" id="7_55uyf"]
+
+[sub_resource type="Theme" id="Theme_2k0p2"]
+default_font = ExtResource("4_cxdly")
+
+[node name="MainMenu" type="Node2D" unique_id=836889553]
+script = ExtResource("1_at0u2")
+
+[node name="Map" parent="." unique_id=1227534341 instance=ExtResource("2_11gta")]
+position = Vector2(523, 307)
+
+[node name="Music" type="AudioStreamPlayer" parent="." unique_id=145168678]
+stream = ExtResource("1_jf8mj")
+volume_db = -6.725
+autoplay = true
+
+[node name="Control" type="Control" parent="." unique_id=436065549]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 900.0
+offset_bottom = 600.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control" unique_id=1402712590]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control/VBoxContainer" unique_id=838637968]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("4_vxn86")
+theme_override_font_sizes/font_size = 100
+text = "FLOCKERS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control" type="Control" parent="Control/VBoxContainer" unique_id=1432715748]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/VBoxContainer/Control" unique_id=433153785]
+layout_mode = 0
+offset_top = 25.0
+offset_right = 300.0
+offset_bottom = 129.0
+scale = Vector2(2, 2)
+
+[node name="LevelSelect" type="TextureButton" parent="Control/VBoxContainer/Control/VBoxContainer" unique_id=1042267079]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="Control/VBoxContainer/Control/VBoxContainer/LevelSelect" unique_id=1923429007]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Select Level"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Controls" type="TextureButton" parent="Control/VBoxContainer/Control/VBoxContainer" unique_id=31348062]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="Control/VBoxContainer/Control/VBoxContainer/Controls" unique_id=1119302966]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Controls"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Credits" type="TextureButton" parent="Control/VBoxContainer/Control/VBoxContainer" unique_id=1448643581]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="Control/VBoxContainer/Control/VBoxContainer/Credits" unique_id=986351747]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Credits"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelMenu" type="Control" parent="." unique_id=2096530061]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_right = 900.0
+offset_bottom = 600.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LevelMenu" unique_id=421190611]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -96.0
+offset_top = -141.0
+offset_bottom = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(2, 2)
+
+[node name="Level1" type="TextureButton" parent="LevelMenu/VBoxContainer" unique_id=19335717]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="LevelMenu/VBoxContainer/Level1" unique_id=1385710903]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Level 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Level2" type="TextureButton" parent="LevelMenu/VBoxContainer" unique_id=2108598497]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="LevelMenu/VBoxContainer/Level2" unique_id=43064009]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Level 2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Level3" type="TextureButton" parent="LevelMenu/VBoxContainer" unique_id=176698038]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="LevelMenu/VBoxContainer/Level3" unique_id=1533024603]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Level 3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Back" type="TextureButton" parent="LevelMenu/VBoxContainer" unique_id=1469717100]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="LevelMenu/VBoxContainer/Back" unique_id=1590908031]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Back"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control2" type="Control" parent="." unique_id=932385824]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_right = 900.0
+offset_bottom = 600.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control2" unique_id=356586036]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control2/VBoxContainer" unique_id=1344430105]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_cxdly")
+theme_override_font_sizes/font_size = 20
+text = "Controls:
+
+WASD to move - you can move for 3 seconds
+
+Click once to start throwing, click again to determine 2d direction
+Click a third time to determine height of throw
+
+Shift to go on belly (make yourself slippier)
+
+Space to jump
+
+Knock the enemy penguins into water or deplete their hp to win!
+
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Back" type="TextureButton" parent="Control2/VBoxContainer" unique_id=215199849]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="Control2/VBoxContainer/Back" unique_id=1459151492]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Back"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Control3" type="Control" parent="." unique_id=1539407938]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_right = 900.0
+offset_bottom = 600.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control3" unique_id=1091068677]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -200.0
+offset_right = 300.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Control3/VBoxContainer" unique_id=1636645911]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_cxdly")
+theme_override_font_sizes/font_size = 20
+text = "Game and art by Jack Blazes (blazec)
+
+sound effects
+
+freesound_community
+Bidone: https://freesound.org/s/66150/
+Wolfgang Wozniak
+leohpaz
+pauliuw
+
+music
+
+Kevin MacLeod
+
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Back" type="TextureButton" parent="Control3/VBoxContainer" unique_id=1221719864]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("5_gn11b")
+texture_pressed = ExtResource("6_uayf2")
+texture_hover = ExtResource("7_55uyf")
+
+[node name="Label" type="Label" parent="Control3/VBoxContainer/Back" unique_id=1771393728]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -23.0
+offset_top = -11.5
+offset_right = 23.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_2k0p2")
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 10
+text = "Back"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="Control/VBoxContainer/Control/VBoxContainer/LevelSelect" to="." method="_on_level_select_pressed"]
+[connection signal="pressed" from="Control/VBoxContainer/Control/VBoxContainer/Controls" to="." method="_on_level_select_2_pressed"]
+[connection signal="pressed" from="Control/VBoxContainer/Control/VBoxContainer/Credits" to="." method="_on_level_select_3_pressed"]
+[connection signal="pressed" from="LevelMenu/VBoxContainer/Level1" to="." method="_on_level_1_pressed"]
+[connection signal="pressed" from="LevelMenu/VBoxContainer/Level2" to="." method="_on_level_2_pressed"]
+[connection signal="pressed" from="LevelMenu/VBoxContainer/Level3" to="." method="_on_level_3_pressed"]
+[connection signal="pressed" from="LevelMenu/VBoxContainer/Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="Control2/VBoxContainer/Back" to="." method="_on_back2_pressed"]
+[connection signal="pressed" from="Control3/VBoxContainer/Back" to="." method="_on_back3_pressed"]

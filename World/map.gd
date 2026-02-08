@@ -1,4 +1,4 @@
-extends Node
+extends Node2D
 
 const Tile = preload("res://World/tile.gd")
 const TILE_SCENE = preload("res://World/tile.tscn")

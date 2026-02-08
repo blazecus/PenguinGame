@@ -2,13 +2,17 @@ extends Node2D
 
 const CAMERA_SPEED = 10.0
 const TEXT_TIME = 4.0
+const AI_WAIT = 0.5
+const END_TIME = 4.0
 
 const PAWN_SCENE = preload("res://Character/pawn.tscn")
 const BAR_SCENE = preload("res://Character/Bars.tscn")
 const PawnScript = preload("res://Character/pawn.gd")
 const Tile = preload("res://World/tile.gd")
 const Projectile = preload("res://Character/projectile.gd")
-const Map = preload("res://World/Map.gd")
+const Map = preload("res://World/map.gd")
+
+const MENU_SCENE := preload("res://Menus/main_menu.tscn")
 
 @onready var team1 = $Team1
 @onready var team2 = $Team2
@@ -39,13 +43,24 @@ var watching_projectile: Node2D
 var start_timer = TEXT_TIME
 var end_timer = 0
 
+var s_collide = false
+var s_jump = false
+var s_select = false
+var ai_timer = 0.0
+var game_state = 0
+
 func _ready() -> void:
-	load_map("")
+	load_map()
 	select_pawn(0,0)
 
-func load_map(map_dir: String) -> void:
-	var map_file = FileAccess.open("res://World/Maps/testmap.json", FileAccess.READ)
-	var map_json = JSON.parse_string(map_file.get_as_text())	
+func load_map() -> void:
+	var map_file = FileAccess.open("res://World/Maps/" + Globals.current_level + ".json", FileAccess.READ)
+	var map_json := {} 
+	if map_file:
+		map_json = JSON.parse_string(map_file.get_as_text())	
+		map_file.close()
+	else:
+		push_error("failed to open level file")
 	
 	for team in range(2):
 		for pawn in map_json["teams"][team]:
@@ -57,6 +72,7 @@ func load_map(map_dir: String) -> void:
 			)
 			instanced_pawn.set_proj_counts(map_json["items"][team])
 			teams[team].add_child(instanced_pawn)
+			connect_pawn_signals(instanced_pawn)
 
 			var instanced_bar = BAR_SCENE.instantiate()
 			instanced_bar.position = instanced_pawn.position
@@ -65,35 +81,93 @@ func load_map(map_dir: String) -> void:
 			instanced_pawn.set_team(team)
 	
 	map.load_tiles(map_json)
+
+func connect_pawn_signals(pawn: Node2D) -> void:
+	pawn.connect("s_jumped", _on_pawn_jumped)
+	pawn.connect("s_collide", _on_pawn_collided)
+	pawn.connect("s_select", _on_pawn_selected)
+	pawn.connect("s_throw", _on_pawn_throw)
+	pawn.connect("s_die", _on_pawn_die)
+	pawn.connect("s_damage", _on_pawn_damage)
+	pawn.connect("s_bumper", _on_bumper)
+
+func _on_pawn_jumped() -> void:
+	$Sound.get_node("Jump").play()
+
+func _on_pawn_collided() -> void:
+	$Sound.get_node("Thud").play()
+
+func _on_pawn_selected() -> void:
+	$Sound.get_node("Select").play()
+
+func _on_pawn_die() -> void:
+	$Sound.get_node("Die").play()
+
+func _on_pawn_throw() -> void:
+	$Sound.get_node("Throw").play()
+
+func _on_pawn_damage() -> void:
+	$Sound.get_node("Damage").play()
+
+func _on_explode() -> void:
+	$Sound.get_node("Explode").play()
+
+func _on_spikes() -> void:
+	$Sound.get_node("Spikes").play()
+
+func _on_bumper() -> void:
+	$Sound.get_node("Bumper").play()
 				
 func _process(delta: float) -> void:
+	if game_state != 0:
+		end_timer += delta
+		if end_timer > END_TIME:
+			get_tree().change_scene_to_packed(MENU_SCENE)
+		return
+			
 	handle_controls()
 	control_camera(delta)
-	ai_turn()
+	ai_turn(delta)
+	manage_disables()
 
-	var game_state = check_win()
+	game_state = check_win()
 	if game_state == 0:
 		return
 	
+	var end_text = "You lose!"
 	if game_state == 1:
-		print("YOU WIN")
-		# display win, exit to main menu
-		pass
-	else:
-		print("YOU LOSE")
-		# display lose, exit to main menu
-		pass
+		end_text = "You win!"
+	
+	$Message/TextureRect/Label.text = end_text
+	$Message.visible = true
 
-func ai_turn():
+	for child in team1.get_children():
+		child.queue_free()	
+
+	for child in team2.get_children():
+		child.queue_free()	
+	camera.position = Vector2.ZERO
+
+func manage_disables() -> void:
+	for i in $Control/VBoxContainer.get_children():
+		i.get_node("Label").add_theme_color_override("font_color", Color(0,0,0) if not i.disabled else Color(0.6,0.6,0.6))
+
+func ai_turn(delta: float):
 	if selected_pawn.team == 1:
 		if selected_pawn.state == PawnScript.PawnState.WAITING_FOR_ACTION:
-			if not selected_pawn.ai_moved:
+			ai_timer += delta
+			if not selected_pawn.ai_moved and ai_timer > AI_WAIT:
 				selected_pawn.state = PawnScript.PawnState.WAITING_FOR_MOVEMENT
+				ai_timer = 0.0
 		elif selected_pawn.state == PawnScript.PawnState.DONE_MOVING:
-			if not selected_pawn.ai_threw:
+			ai_timer += delta
+			if not selected_pawn.ai_threw and ai_timer > AI_WAIT * 1.5:
 				selected_pawn.state = PawnScript.PawnState.THROWING
+				ai_timer = 0.0
 		if selected_pawn.state != PawnScript.PawnState.WATCHING and selected_pawn.ai_moved and selected_pawn.ai_threw:
-			end_turn()
+			ai_timer += delta
+			if ai_timer > AI_WAIT * 3.0:
+				end_turn()
 
 func end_turn() -> void:
 	unselect_pawn()
@@ -112,7 +186,7 @@ func find_next(team: int, turn: int) -> int:
 	return next
 
 func handle_controls() -> void:
-	if(Input.is_action_just_pressed("enter")):
+	if(Input.is_action_just_pressed("enter") and selected_pawn.team == 0):
 		end_turn()
 
 	if selected_pawn.state == PawnScript.PawnState.THROWING:
@@ -139,8 +213,10 @@ func select_pawn(team: int, offset: int) -> void:
 	for i in proj_buttons.keys():
 		if i != Projectile.ProjectileType.SNOWBALL:	
 			var item_count = selected_pawn.get_projectile_count(i)
-			proj_buttons[i].text = proj_buttons[i].text.substr(0, proj_buttons[i].text.length() - 1) + str(item_count)
+			proj_buttons[i].get_node("Label").text = proj_buttons[i].get_node("Label").text.substr(0, proj_buttons[i].get_node("Label").text.length() - 1) + str(item_count)
 			proj_buttons[i].disabled = item_count <= 0
+	
+	ai_timer = 0.0
 
 func unselect_pawn() -> void:
 	selected_pawn.unselect()
@@ -169,6 +245,10 @@ func _on_end_turn_pressed() -> void:
 func set_watching_projectile(projectile: Projectile) -> void:
 	watching_projectile = projectile
 	projectiles.add_child(projectile)
+	projectile.connect("s_collide", _on_pawn_collided)
+	projectile.connect("s_explode", _on_explode)
+	projectile.connect("s_spikes", _on_spikes)	
+	projectile.connect("s_bumper", _on_bumper)
 
 func end_projectile(projectile: Node2D) -> void:
 	if projectile == watching_projectile:

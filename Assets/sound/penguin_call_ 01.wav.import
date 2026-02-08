@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://h5j58s1s7bd2"
+path="res://.godot/imported/penguin_call_ 01.wav-5a768dce1ee8d2a8df8d0f55581e1cf1.sample"
+
+[deps]
+
+source_file="res://Assets/sound/penguin_call_ 01.wav"
+dest_files=["res://.godot/imported/penguin_call_ 01.wav-5a768dce1ee8d2a8df8d0f55581e1cf1.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

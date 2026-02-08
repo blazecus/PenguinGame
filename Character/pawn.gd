@@ -142,6 +142,14 @@ var ai_threw = false
 @onready var sprite = $AnimatedSprite2D
 @onready var shadow = $Shadow
 
+signal s_jumped
+signal s_select
+signal s_collide
+signal s_throw
+signal s_die
+signal s_damage
+signal s_bumper
+
 func _ready() -> void:
 	play_animation("idle_s",0)
 	mass = PENGUIN_MASS
@@ -181,13 +189,15 @@ func _physics_process(delta: float) -> void:
 		fake_rotation_velocity -= sign(fake_rotation_velocity) * FAKE_ROTATION_DRAG * delta
 	
 	var movement_input = handle_input()
-	compute_forces(movement_input, delta)
+	compute_forces(movement_input)
 
 	if(state == PawnState.MOVING or state == PawnState.WAITING_FOR_MOVEMENT):
 		movement_timer -= delta
+		if team == 1 and movement_timer < -5.0:
+			get_parent().get_parent().end_turn()
 		if(movement_timer <= 0.0 and slow_stopped()):
 			state = PawnState.DONE_MOVING
-			gui.visible = true
+			gui.visible = team == 0
 			gui.get_node("VBoxContainer").get_node("Move").disabled = true
 			ai_moved = true
 			enforce_front_rotation()
@@ -220,6 +230,8 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 
 	height += vertical_velocity * delta
 	if(height > 0):
+		if height - vertical_velocity * delta < 0:
+			emit_signal("s_collide")
 		height = 0.0
 		vertical_velocity = 0.0
 		if state == PawnState.MOVING:
@@ -228,9 +240,10 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 
 	for i in range(pstate.get_contact_count()):
 		var collider = pstate.get_contact_collider_object(i)
+		emit_signal("s_collide")
 		if collider.get_parent().has_method("get_collision_info"):
 			#var normal = rect_normal(pstate.get_contact_local_normal(i))
-			var collision_info = collider.get_parent().get_collision_info()
+			handle_collision(collider.get_parent().get_collision_info())
 			#var collision_direction = prev_vel.normalized()
 			#if abs(normal.x) > 0:
 			#	collision_direction.x = -collision_direction.x
@@ -238,15 +251,18 @@ func _integrate_forces(pstate: PhysicsDirectBodyState2D) -> void:
 			#	collision_direction.y = -collision_direction.y
 			
 			#collide_with_wall(collision_direction, collision_info.x, collision_info.y)
-			if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
-				collide_with_wall(collision_info.x, collision_info.y)
 		
 		elif collider.has_method("get_collision_info"):
-			var collision_info = collider.get_collision_info()
-			if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
-				collide_with_wall(collision_info.x, collision_info.y)
+			handle_collision(collider.get_collision_info())
 
 	prev_vel = linear_velocity	
+
+func handle_collision(collision_info: Vector2) -> void:
+	if abs(collision_info.x) > 0 or abs(collision_info.y) > 0:
+		if collision_info.y > 0:
+			emit_signal("s_bumper") 
+		collide_with_wall(collision_info.x, collision_info.y)
+
 
 func rect_normal(n: Vector2) -> Vector2:
 	if abs(n.x) > abs(n.y):
@@ -259,7 +275,7 @@ func handle_gui() -> void:
 		gui.global_position = global_position
 
 	bar.get_node("VBoxContainer").get_node("StaminaBar").value = movement_timer
-	bar.get_node("VBoxContainer").get_node("StaminaBar").visible = state == PawnState.MOVING or state == PawnState.WAITING_FOR_MOVEMENT
+	bar.get_node("VBoxContainer").get_node("StaminaBar").visible = team == 0 and (state == PawnState.MOVING or state == PawnState.WAITING_FOR_MOVEMENT)
 
 	bar.get_node("VBoxContainer").get_node("HealthBar").value = health
 	bar.global_position = global_position
@@ -339,16 +355,16 @@ func handle_input() -> Vector2:
 		if movement_input.length() > 0:
 			walking = true
 			walking_angle = movement_input.angle()
-		
 	
 	if prev_walking and not walking:
 		fake_rotation = walking_angle
 		fake_rotation_velocity = 0
 
-	if selected:
+	if selected and team == 0:
 		if Input.is_action_just_pressed("space"):
 			vertical_velocity = -JUMP_VELOCITY
 			set_collision(2)
+			emit_signal("s_jumped")
 
 		if Input.is_action_just_pressed("shift"):
 			toggle_belly()
@@ -409,6 +425,7 @@ func throw() -> void:
 	get_parent().get_parent().set_watching_projectile(projectile)
 	state = PawnState.WATCHING
 	proj_counts[projectile_type] -= 1
+	emit_signal("s_throw")
 
 func throw_ai(dir: Vector2, strength: Vector2, type: Projectile.ProjectileType) -> void:
 	set_collision(0)
@@ -421,6 +438,7 @@ func throw_ai(dir: Vector2, strength: Vector2, type: Projectile.ProjectileType) 
 	get_parent().get_parent().set_watching_projectile(projectile)
 	state = PawnState.WATCHING
 	proj_counts[type] -= 1
+	emit_signal("s_throw")
 
 func _draw() -> void:
 	if throw_line >= 3 or throw_line < 1:
@@ -508,23 +526,8 @@ func get_ai_throw_strength(dist: float) -> Vector2:
 	var height_strength = -clamp(dist * 0.1, 2.0 / HEIGHT_THROW_STRENGTH, THROW_HEIGHT_DRAG_LENGTH) * HEIGHT_THROW_STRENGTH
 	return Vector2(twod, height_strength)
 
-func compute_forces(movement_input: Vector2, delta: float) -> void:
+func compute_forces(movement_input: Vector2) -> void:
 	var movement_force = Vector2.ZERO
-	
-	#if(!on_belly or height > 0):
-	#	movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
-	#else:
-	#	if movement_input.y < 0:
-	#		movement_input.y *= 1.5
-	#	else:
-	#		movement_input.y = 0
-		
-	#	belly_direction = belly_direction.rotated(BELLY_ROTATIONAL_SPEED * delta * movement_input.x).normalized()
-		
-	#	movement_force = movement_input.y * belly_direction * WALK_FORCES[tile_state] * BELLY_FORCE_MULTIPLIER
-
-	# gave up on old belly movement
-
 	if(selected and (state == PawnState.WAITING_FOR_MOVEMENT or state == PawnState.MOVING) and movement_timer > 0.0):
 		movement_force = movement_input * (AIRBORN_FORCE if height < 0 else WALK_FORCES[tile_state])
 	linear_damp = (AIRBORN_DRAG if height < 0 else DRAG_FORCES[tile_state]) * (BELLY_DRAG_MULTIPLIER if on_belly else 1.0)
@@ -546,7 +549,7 @@ func is_alive() -> bool:
 
 func select() -> void:
 	selected = true
-	gui.visible = true
+	gui.visible = team == 0
 	gui.get_node("VBoxContainer").get_node("Move").disabled = false
 	gui.get_node("VBoxContainer").get_node("Throw").disabled = false
 	state = PawnState.WAITING_FOR_ACTION
@@ -556,6 +559,7 @@ func select() -> void:
 	ai_moved = false
 	ai_threw = false
 	ai_movement_setting = Vector2.ZERO
+	emit_signal("s_select")
 
 func unselect() -> void:
 	selected = false
@@ -580,6 +584,7 @@ func apply_external_impulse(force: Vector2) -> void:
 
 func take_damage(amount: float) -> void:
 	health -= amount
+	emit_signal("s_damage")
 	if health <= 0:
 		die(false)
 
@@ -642,6 +647,7 @@ func die(drown: bool) -> void:
 	
 	rotation = 0
 
+	emit_signal("s_die")
 	play_animation_current("death")
 
 func set_projectile_type(proj_type: Projectile.ProjectileType) -> void:

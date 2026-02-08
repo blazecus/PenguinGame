@@ -5,6 +5,8 @@ extends Node
 const THROW_STRENGTH_MODIFIER = 5.0
 const THROW_MAX_PULL_LENGTH = 150
 
+var current_level = "level1"
+
 # in case i need it
 func layers_to_mask(layers: Array) -> int:
 	var mask = 0

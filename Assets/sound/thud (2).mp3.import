@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cm6dfvv6g4dar"
+path="res://.godot/imported/thud (2).mp3-755beda98776e76743ae6b9f4d7b92ce.mp3str"
+
+[deps]
+
+source_file="res://Assets/sound/thud (2).mp3"
+dest_files=["res://.godot/imported/thud (2).mp3-755beda98776e76743ae6b9f4d7b92ce.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
