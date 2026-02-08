@@ -361,7 +361,7 @@ func handle_input() -> Vector2:
 		fake_rotation_velocity = 0
 
 	if selected and team == 0:
-		if Input.is_action_just_pressed("space"):
+		if Input.is_action_just_pressed("space") and height >= 0:
 			vertical_velocity = -JUMP_VELOCITY
 			set_collision(2)
 			emit_signal("s_jumped")

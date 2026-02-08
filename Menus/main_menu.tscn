@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://cv4bgvvc5dq3v"]
 
 [ext_resource type="Script" uid="uid://c38g3xrtvhtnp" path="res://Menus/main_menu.gd" id="1_at0u2"]
-[ext_resource type="AudioStream" uid="uid://d2p54bm8fwa3j" path="res://Assets/sound/menu2.mp3" id="1_jf8mj"]
 [ext_resource type="PackedScene" uid="uid://hvpf0nex82ol" path="res://World/Map.tscn" id="2_11gta"]
+[ext_resource type="AudioStream" uid="uid://c6wiy26kjpd1b" path="res://Assets/menu3.mp3" id="3_2k0p2"]
 [ext_resource type="FontFile" uid="uid://d4ktqvro63ffh" path="res://Assets/ARCADEPI.TTF" id="4_cxdly"]
 [ext_resource type="FontFile" uid="uid://dcpe3igmi2tpv" path="res://Assets/Pixel Game.otf" id="4_vxn86"]
 [ext_resource type="Texture2D" uid="uid://kgg4ajjmdoib" path="res://Assets/button_long.png" id="5_gn11b"]
@@ -19,7 +19,7 @@ script = ExtResource("1_at0u2")
 position = Vector2(523, 307)
 
 [node name="Music" type="AudioStreamPlayer" parent="." unique_id=145168678]
-stream = ExtResource("1_jf8mj")
+stream = ExtResource("3_2k0p2")
 volume_db = -6.725
 autoplay = true
 
