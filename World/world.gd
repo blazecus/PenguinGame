@@ -12,8 +12,6 @@ const Tile = preload("res://World/tile.gd")
 const Projectile = preload("res://Character/projectile.gd")
 const Map = preload("res://World/map.gd")
 
-const MENU_SCENE := preload("res://Menus/main_menu.tscn")
-
 @onready var team1 = $Team1
 @onready var team2 = $Team2
 @onready var camera = $Camera2D
@@ -117,12 +115,15 @@ func _on_spikes() -> void:
 
 func _on_bumper() -> void:
 	$Sound.get_node("Bumper").play()
-				
+
+func go_to_menu() -> void:
+	Globals.load_menu()
+	
 func _process(delta: float) -> void:
 	if game_state != 0:
 		end_timer += delta
 		if end_timer > END_TIME:
-			get_tree().change_scene_to_packed(MENU_SCENE)
+			call_deferred("go_to_menu")
 		return
 			
 	handle_controls()

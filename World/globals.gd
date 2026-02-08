@@ -4,6 +4,7 @@ extends Node
 # to match trajectory simulation to actual throwing trajectories
 const THROW_STRENGTH_MODIFIER = 5.0
 const THROW_MAX_PULL_LENGTH = 150
+const MENU_SCENE := preload("res://Menus/main_menu.tscn")
 
 var current_level = "level1"
 
@@ -16,3 +17,6 @@ func layers_to_mask(layers: Array) -> int:
 
 func _ready():
 	randomize()
+
+func load_menu():
+	get_tree().change_scene_to_packed(MENU_SCENE)
